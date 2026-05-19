@@ -76,6 +76,8 @@ const openMemoDetail = async (memo: Memo) => {
   margin: 8px 0 0;
   color: #52616b;
   line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .date {
