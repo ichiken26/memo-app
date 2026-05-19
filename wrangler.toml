@@ -1,0 +1,17 @@
+name = "memo-app-nuxt-training"
+compatibility_date = "2026-05-17"
+
+[vars]
+NUXT_PUBLIC_FIREBASE_API_KEY="AIzaSyDxA0NHDkYJKxx5lfjWK62htg-JIxdy6ic"
+NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN="memo-app-984c3.firebaseapp.com"
+NUXT_PUBLIC_FIREBASE_PROJECT_ID="memo-app-984c3"
+NUXT_PUBLIC_FIREBASE_APP_ID="1:10266044112:web:5e0b2c7500bf06f75ce0d5"
+
+NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "memo-app-984c3.firebasestorage.app"
+NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "10266044112"
+NUXT_PUBLIC_FIREBASE_MEASUREMENT_ID = "G-JB22FRV5FR"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "memo-db"
+database_id = "d98d1c07-1cbc-48fe-bddf-585a86275cc2"
