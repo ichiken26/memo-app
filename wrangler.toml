@@ -1,5 +1,14 @@
 name = "memo-app-nuxt-training"
 compatibility_date = "2026-05-17"
+main = ".output/server/index.mjs"
+compatibility_flags = ["nodejs_compat", "no_nodejs_compat_v2"]
+
+[assets]
+binding = "ASSETS"
+directory = ".output/public"
+
+[build]
+command = "npm run build"
 
 [vars]
 NUXT_PUBLIC_FIREBASE_API_KEY="AIzaSyDxA0NHDkYJKxx5lfjWK62htg-JIxdy6ic"
