@@ -1,126 +1,93 @@
-# Nuxt Minimal Starter
+# MEMO APP
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Nuxt 4 と Cloudflare Workers/D1 で動作するメモアプリです。Googleログイン後、ログインユーザー単位でメモとタグを管理します。
 
-## Memo App Notes
+## 主な機能
 
-The mock data source is `shared/memos.ts`.
-
-The mock API handlers under `server/api/` use that shared data source, but the frontend is not connected to the API yet. The current frontend still uses the client-side memo store directly.
+- Googleログイン
+- タグ別メモ一覧
+- メモ作成、編集、自動保存、削除
+- タグ検索
+- タグ名、タグ色の編集
+- タグ作成、削除
+- Cloudflare D1 による永続化
 
 ## Setup
 
-Make sure to install dependencies:
+依存関係をインストールします。
 
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
+## Development
 
-Start the development server on `http://localhost:3000`:
+Nuxt単体の開発サーバーを起動します。
 
 ```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
-
-Build the application for production:
+Cloudflare Workers環境で確認する場合は、ビルド後にWranglerで起動します。
 
 ```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+npx wrangler dev
 ```
 
-Locally preview production build:
+`wrangler.toml` のD1 bindingに `remote = true` を設定している場合、ローカル起動でも本番D1に接続します。作成、更新、削除は本番データに反映されます。
+
+## Production Build
 
 ```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
+npm run build
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Workersへデプロイする場合は、ビルド後に以下を実行します。
+
+```bash
+npx wrangler --cwd .output deploy
+```
+
+Cloudflare WorkersのGitHub連携では、build/deploy設定がWrangler構成と一致している必要があります。
 
 ## API Unit Tests
-
-Run the API unit tests:
 
 ```bash
 npm run test:api
 ```
 
-This executes:
+API実装はCloudflare D1の `DB` bindingを使います。単体テストでは、`event.context.cloudflare.env.DB` にテスト用D1互換オブジェクトを渡します。
+
+## D1
+
+`wrangler.toml` のD1 bindingで接続先を指定します。
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "memo-db"
+database_id = "D1_DATABASE_ID"
+```
+
+本番D1へSQLを直接実行する例:
 
 ```bash
-node --experimental-strip-types --test tests/api.test.ts
+npx wrangler d1 execute memo-db --remote --command "SELECT * FROM tags LIMIT 10;"
 ```
 
-The API implementation uses Cloudflare D1 through the `DB` binding. Direct handler tests must provide a test D1 binding on `event.context.cloudflare.env.DB`.
+## Google Auth
 
+Firebase ConsoleでGoogle認証を有効化し、`.env` にFirebase Webアプリの公開設定を入れます。
 
-# DB接続手順
-1. Cloudflare D1を立てる
-2. 下記コマンドを実行し、D1のUUIDを取得
-```bash
-npx wrangler d1 list
-```
-3. `wrangler.toml`の`database_id`にUUIDを指定する
-4. 型定義を更新する
-```bash
-npx wrangler types
+```env
+NUXT_PUBLIC_FIREBASE_API_KEY="your-firebase-api-key"
+NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
+NUXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
+NUXT_PUBLIC_FIREBASE_APP_ID="your-firebase-app-id"
+NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
+NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
+NUXT_PUBLIC_FIREBASE_MEASUREMENT_ID="your-measurement-id"
 ```
 
-# Google認証手順
-1. Firebaseプロジェクトを立てる
-2. Authenticationから「新たなプロバイダを追加」でGoogleを追加する。サポートメールアドレスを追加する。
-3. 以下から`apiKey`, `authDomain`, `projectId`, `appId`をコピーし、
-```ts
-const firebaseConfig = {
-  apiKey: "XXXXXXX",
-  authDomain: "XXXXXXX",
-  projectId: "XXXXXXX",
-  storageBucket: "XXXXXXX",
-  messagingSenderId: "XXXXXXX",
-  appId: "XXXXXXX",
-  measurementId: "XXXXXXX"
-};
-```
+現在のAPIは `ownerUid` をリクエストから受け取ります。本番でAPI保護を強める場合は、Firebase IDトークンをサーバー側で検証し、検証済み `uid` を `ownerUid` として使う構成にしてください。

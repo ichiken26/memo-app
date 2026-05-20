@@ -24,3 +24,4 @@ NUXT_PUBLIC_FIREBASE_MEASUREMENT_ID = "G-JB22FRV5FR"
 binding = "DB"
 database_name = "memo-db"
 database_id = "d98d1c07-1cbc-48fe-bddf-585a86275cc2"
+remote = true

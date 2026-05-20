@@ -46,23 +46,24 @@ NUXT_PUBLIC_FIREBASE_MEASUREMENT_ID="your-measurement-id"
 ```
 
 8. `npm run dev` を起動し、Googleログインが動くことを確認する。
-9. バックエンドAPIと接続する段階で、クライアントからFirebase IDトークンを送る。
-10. バックエンド側ではFirebase Admin SDKでIDトークンを検証し、検証済み `uid` でメモを絞り込む。
+9. Workers/D1環境で確認する場合は `npm run build` 後に `npx wrangler dev` を起動する。
+10. API保護を強める段階で、クライアントからFirebase IDトークンを送る。
+11. バックエンド側ではFirebase Admin SDKでIDトークンを検証し、検証済み `uid` でメモを絞り込む。
 
 ## 実装時の注意
 
 - Firebaseクライアント設定の `apiKey` はブラウザに露出する前提の値です。ただし、Firebase Console側の認証プロバイダ、承認済みドメイン、Firestore/DBのセキュリティルールは必ず設定してください。
-- このプロジェクトではまだフロントとモックAPIを接続していません。今回の実装は画面上のログイン状態管理までです。
+- このプロジェクトではフロントからNuxt server APIを呼び出し、API側はCloudflare D1の `DB` bindingを使います。
 - Firebase AuthだけではAPI保護は完了しません。APIを本番接続するときは、Firebase IDトークン検証を必ず追加してください。
-- 現在の画面内ストアとモックAPIでは、メモに `ownerUid` を持たせてユーザーごとにメモを分離しています。
-- モックAPIの `ownerUid` はテスト用の受け渡しです。本番接続時はリクエストbody/queryの `ownerUid` を信用せず、検証済みFirebase `uid` から決定してください。
+- 現在のAPIでは、メモとタグに `ownerUid` を持たせてユーザーごとにデータを分離しています。
+- 現在の `ownerUid` はクライアントからの受け渡しです。本番API保護を強める場合はリクエストbody/queryの `ownerUid` を信用せず、検証済みFirebase `uid` から決定してください。
 
 ## データ永続化の作業
 
-現在のメモとタグは `shared/memos.ts` のサンプルデータです。メモには `ownerUid` があり、初期デモデータは `demo-user-001` に紐づいています。本番化する場合は以下を実施してください。
+現在のメモとタグはCloudflare D1で永続化します。`shared/memos.ts` には型定義、ID生成、検索補助、テスト用サンプルデータが残っています。
 
-1. データベースを選定する。
-2. `memos`、`tags`、`memo_tags`、`users` 相当のデータ構造を作成する。
-3. ユーザーIDにはFirebase Authの `uid` を使う。
-4. `/api/memos`、`/api/tags`、`/api/search` をデータベース参照に置き換える。
-5. すべての検索・作成・更新・削除APIで、検証済みFirebase `uid` を条件に加える。
+残作業:
+
+1. 本番APIでFirebase IDトークンを検証する。
+2. 検証済みFirebase `uid` を `ownerUid` として使い、リクエストbody/queryの `ownerUid` 依存をなくす。
+3. 必要に応じてD1のマイグレーション運用を整える。

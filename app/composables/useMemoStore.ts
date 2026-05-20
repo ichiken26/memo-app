@@ -68,6 +68,42 @@ export const useMemoStore = () => {
     return tag
   }
 
+  const updateTag = async (id: string, ownerUid: string, input: { name: string; color: string }) => {
+    const trimmedName = input.name.trim()
+    if (!trimmedName) {
+      return null
+    }
+
+    const { tag } = await $fetch<{ tag: MemoTag }>(`/api/tags/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: {
+        ownerUid,
+        name: trimmedName,
+        color: input.color
+      }
+    })
+
+    tags.value = tags.value.map((currentTag) => (currentTag.id === id ? tag : currentTag))
+    memos.value = memos.value.map((memo) => ({
+      ...memo,
+      tags: memo.tags.map((memoTag) => (memoTag.id === id ? tag : memoTag))
+    }))
+    return tag
+  }
+
+  const deleteTag = async (id: string, ownerUid: string) => {
+    await $fetch(`/api/tags/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      query: { ownerUid }
+    })
+
+    tags.value = tags.value.filter((tag) => tag.id !== id)
+    memos.value = memos.value.map((memo) => ({
+      ...memo,
+      tags: memo.tags.filter((tag) => tag.id !== id)
+    }))
+  }
+
   const createMemo = async (input: MemoInput) => {
     const { memo } = await $fetch<{ memo: Memo }>('/api/memos', {
       method: 'POST',
@@ -105,6 +141,8 @@ export const useMemoStore = () => {
     findTag,
     getMemosByOwner,
     createTag,
+    updateTag,
+    deleteTag,
     createMemo,
     updateMemo,
     deleteMemo

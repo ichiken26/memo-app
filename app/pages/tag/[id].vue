@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Memo } from '~~/shared/memos'
+
 const route = useRoute()
 const memoStore = useMemoStore()
 const { user } = useFirebaseAuth()
@@ -12,6 +14,16 @@ const filteredMemos = computed(() =>
         .filter((memo) => memo.tags.some((memoTag) => memoTag.id === tag.value?.id))
     : []
 )
+const memoPendingDelete = ref<Memo | null>(null)
+
+const confirmMemoDelete = async () => {
+  if (!user.value || !memoPendingDelete.value) {
+    return
+  }
+
+  await memoStore.deleteMemo(memoPendingDelete.value.id, user.value.uid)
+  memoPendingDelete.value = null
+}
 </script>
 
 <template>
@@ -24,9 +36,17 @@ const filteredMemos = computed(() =>
       </div>
     </header>
 
-    <MemoPreviewList v-if="tag" class="memo-list" :memos="filteredMemos" />
+    <MemoPreviewList v-if="tag" class="memo-list" :memos="filteredMemos" @delete="(memo) => memoPendingDelete = memo" />
 
     <section v-else class="missing">指定されたタグ ID に一致するタグはありません。</section>
+
+    <ConfirmDeleteModal
+      :open="Boolean(memoPendingDelete)"
+      title="メモを削除"
+      :message="`「${memoPendingDelete?.title ?? ''}」を削除します。この操作は元に戻せません。`"
+      @cancel="memoPendingDelete = null"
+      @confirm="confirmMemoDelete"
+    />
   </main>
 </template>
 

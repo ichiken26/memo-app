@@ -12,6 +12,7 @@ const emit = defineEmits<{
   (event: 'save', value: { title: string; body: string; tags: MemoTag[] }): void
   (event: 'change', value: { title: string; body: string; tags: MemoTag[] }): void
   (event: 'createTag', name: string, selectTag: (tag: MemoTag) => void): void
+  (event: 'delete'): void
 }>()
 
 const title = ref(props.memo?.title ?? '')
@@ -64,7 +65,10 @@ const save = () => emit('save', editorValue.value)
     <footer class="editor-footer">
       <span v-if="mode === 'edit'" class="save-status">{{ saveStatus }}</span>
       <span v-else class="save-status">作成時に保存されます</span>
-      <button class="save-button" type="submit">保存</button>
+      <div class="editor-actions">
+        <button class="save-button" type="submit">保存</button>
+        <button v-if="mode === 'edit'" class="delete-button" type="button" @click="emit('delete')">削除</button>
+      </div>
     </footer>
   </form>
 </template>
@@ -116,14 +120,44 @@ const save = () => emit('save', editorValue.value)
   font-weight: 800;
 }
 
-.save-button {
+.editor-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.save-button,
+.delete-button {
   min-height: 40px;
   border: 0;
   border-radius: 8px;
-  background: #1f2933;
   color: #ffffff;
   cursor: pointer;
   font-weight: 800;
   padding: 0 18px;
+}
+
+.save-button {
+  background: #2563eb;
+}
+
+.delete-button {
+  background: #dc2626;
+}
+
+@media (max-width: 560px) {
+  .editor-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .editor-actions {
+    width: 100%;
+  }
+
+  .save-button,
+  .delete-button {
+    flex: 1;
+  }
 }
 </style>

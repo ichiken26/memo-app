@@ -4,6 +4,10 @@ import type { Memo } from '~~/shared/memos'
 defineProps<{
   results: Memo[]
 }>()
+
+const emit = defineEmits<{
+  (event: 'delete', memo: Memo): void
+}>()
 </script>
 
 <template>
@@ -15,7 +19,7 @@ defineProps<{
 
     <div v-if="results.length === 0" class="empty">該当するメモは存在しません</div>
 
-    <MemoPreviewList v-else :memos="results" />
+    <MemoPreviewList v-else :memos="results" @delete="(memo) => emit('delete', memo)" />
   </section>
 </template>
 

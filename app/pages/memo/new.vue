@@ -11,11 +11,11 @@ const createMemo = async (value: { title: string; body: string; tags: MemoTag[] 
     return
   }
 
-  const memo = await memoStore.createMemo({
+  await memoStore.createMemo({
     ...value,
     ownerUid: user.value.uid
   })
-  router.push(`/memo/${memo.id}?tag=${encodeURIComponent(memo.tags.map((tag) => tag.name).join(','))}`)
+  router.push('/')
 }
 
 const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => void) => {

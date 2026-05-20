@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { searchMemos } from '~~/shared/memos'
+import { searchMemos, type Memo } from '~~/shared/memos'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +22,7 @@ const selectedTagIds = ref<string[]>(
 )
 
 const selectedTags = computed(() => memoStore.tags.value.filter((tag) => selectedTagIds.value.includes(tag.id)))
+const memoPendingDelete = ref<Memo | null>(null)
 const results = computed(() =>
   searchMemos({
     searchWord: searchWord.value,
@@ -50,6 +51,15 @@ const applyHistory = (word: string) => {
   searchWord.value = word
   submitSearch()
 }
+
+const confirmMemoDelete = async () => {
+  if (!user.value || !memoPendingDelete.value) {
+    return
+  }
+
+  await memoStore.deleteMemo(memoPendingDelete.value.id, user.value.uid)
+  memoPendingDelete.value = null
+}
 </script>
 
 <template>
@@ -72,7 +82,15 @@ const applyHistory = (word: string) => {
       @apply-history="applyHistory"
     />
 
-    <SearchResults class="result-area" :results="results" />
+    <SearchResults class="result-area" :results="results" @delete="(memo) => memoPendingDelete = memo" />
+
+    <ConfirmDeleteModal
+      :open="Boolean(memoPendingDelete)"
+      title="メモを削除"
+      :message="`「${memoPendingDelete?.title ?? ''}」を削除します。この操作は元に戻せません。`"
+      @cancel="memoPendingDelete = null"
+      @confirm="confirmMemoDelete"
+    />
   </main>
 </template>
 

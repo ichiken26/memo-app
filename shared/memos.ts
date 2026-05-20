@@ -14,6 +14,7 @@ export type Memo = {
 }
 
 export const DEMO_USER_UID = 'demo-user-001'
+export const UNTAGGED_TAG: MemoTag = { id: 'untagged', name: 'タグなし', color: '#6b7280' }
 
 export const toIdSegment = (value: string) =>
   value
@@ -183,7 +184,17 @@ export const groupMemosByTag = () =>
   }))
 
 export const groupMemoListByTag = (targetMemos: Memo[], targetTags: MemoTag[]) =>
-  targetTags.map((tag) => ({
-    tag,
-    memos: targetMemos.filter((memo) => memo.tags.some((memoTag) => memoTag.id === tag.id))
-  }))
+  [
+    ...targetTags.map((tag) => ({
+      tag,
+      memos: targetMemos.filter((memo) => memo.tags.some((memoTag) => memoTag.id === tag.id))
+    })),
+    ...(targetMemos.some((memo) => memo.tags.length === 0)
+      ? [
+          {
+            tag: UNTAGGED_TAG,
+            memos: targetMemos.filter((memo) => memo.tags.length === 0)
+          }
+        ]
+      : [])
+  ]

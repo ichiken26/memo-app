@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { groupMemoListByTag } from '~~/shared/memos'
+import { UNTAGGED_TAG, groupMemoListByTag, type Memo } from '~~/shared/memos'
 
 const memoStore = useMemoStore()
 const { user, isAuthenticated, isReady, isConfigured, displayName, authError, signInWithGoogle, signOut } = useFirebaseAuth()
@@ -7,6 +7,16 @@ useLoadMemoStoreForUser(user, memoStore)
 
 const userMemos = computed(() => (user.value ? memoStore.getMemosByOwner(user.value.uid) : []))
 const tagGroups = computed(() => groupMemoListByTag(userMemos.value, memoStore.tags.value))
+const memoPendingDelete = ref<Memo | null>(null)
+
+const confirmMemoDelete = async () => {
+  if (!user.value || !memoPendingDelete.value) {
+    return
+  }
+
+  await memoStore.deleteMemo(memoPendingDelete.value.id, user.value.uid)
+  memoPendingDelete.value = null
+}
 </script>
 
 <template>
@@ -39,7 +49,8 @@ const tagGroups = computed(() => groupMemoListByTag(userMemos.value, memoStore.t
           </div>
         </div>
         <nav class="nav-actions" aria-label="主要ナビゲーション">
-          <NuxtLink class="button-link" to="/memo/new">作成</NuxtLink>
+          <NuxtLink class="button-link primary-link" to="/memo/new">新規メモ</NuxtLink>
+          <NuxtLink class="button-link" to="/tags">タグ一覧</NuxtLink>
           <NuxtLink class="button-link" to="/search">検索</NuxtLink>
           <button class="ghost-button" type="button" @click="signOut">ログアウト</button>
         </nav>
@@ -52,15 +63,28 @@ const tagGroups = computed(() => groupMemoListByTag(userMemos.value, memoStore.t
 
       <section class="tag-grid" aria-label="タグごとのメモプレビュー">
         <article v-for="group in tagGroups" :key="group.tag.id" class="tag-section">
-          <NuxtLink class="tag-heading" :to="`/tag/${group.tag.id}?tag=${encodeURIComponent(group.tag.name)}`">
+          <div v-if="group.tag.id === UNTAGGED_TAG.id" class="tag-heading untagged-heading">
+            <span class="tag-dot" :style="{ backgroundColor: group.tag.color }" />
+            <span>{{ group.tag.name }}</span>
+            <span class="count">{{ group.memos.length }}</span>
+          </div>
+          <NuxtLink v-else class="tag-heading" :to="`/tag/${group.tag.id}?tag=${encodeURIComponent(group.tag.name)}`">
             <span class="tag-dot" :style="{ backgroundColor: group.tag.color }" />
             <span>{{ group.tag.name }}</span>
             <span class="count">{{ group.memos.length }}</span>
           </NuxtLink>
 
-          <MemoPreviewList class="memo-list" :memos="group.memos" />
+          <MemoPreviewList class="memo-list" :memos="group.memos" @delete="(memo) => memoPendingDelete = memo" />
         </article>
       </section>
+
+      <ConfirmDeleteModal
+        :open="Boolean(memoPendingDelete)"
+        title="メモを削除"
+        :message="`「${memoPendingDelete?.title ?? ''}」を削除します。この操作は元に戻せません。`"
+        @cancel="memoPendingDelete = null"
+        @confirm="confirmMemoDelete"
+      />
     </template>
   </main>
 </template>
@@ -195,6 +219,10 @@ h1 {
   color: #ffffff;
 }
 
+.primary-link {
+  background: #2563eb;
+}
+
 .ghost-button {
   border: 1px solid #cfd3d8;
   padding: 0 18px;
@@ -236,6 +264,10 @@ h1 {
   border-bottom: 2px solid #1f2933;
   font-size: 20px;
   font-weight: 800;
+}
+
+.untagged-heading {
+  cursor: default;
 }
 
 .tag-dot {

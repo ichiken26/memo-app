@@ -12,6 +12,7 @@ const memo = computed(() => (user.value ? memoStore.findMemoForOwner(memoId.valu
 const saveStatus = ref('保存済み')
 const hasUnsavedChanges = ref(false)
 const isSaving = ref(false)
+const isDeleteModalOpen = ref(false)
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 
 const saveMemo = async (value: { title: string; body: string; tags: MemoTag[] }) => {
@@ -52,6 +53,23 @@ const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => voi
       selectTag(tag)
     }
   }
+}
+
+const deleteCurrentMemo = async () => {
+  if (!user.value || !memo.value) {
+    return
+  }
+
+  if (saveTimer) {
+    clearTimeout(saveTimer)
+    saveTimer = null
+  }
+
+  hasUnsavedChanges.value = false
+  isSaving.value = false
+  await memoStore.deleteMemo(memo.value.id, user.value.uid)
+  isDeleteModalOpen.value = false
+  await router.push('/')
 }
 
 const warnBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -102,7 +120,16 @@ onBeforeRouteLeave(() => {
         :save-status="saveStatus"
         @change="queueAutoSave"
         @save="saveMemo"
+        @delete="isDeleteModalOpen = true"
         @create-tag="createAndSelectTag"
+      />
+
+      <ConfirmDeleteModal
+        :open="isDeleteModalOpen"
+        title="メモを削除"
+        :message="`「${memo.title}」を削除します。この操作は元に戻せません。`"
+        @cancel="isDeleteModalOpen = false"
+        @confirm="deleteCurrentMemo"
       />
     </section>
 
