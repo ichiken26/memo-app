@@ -90,8 +90,6 @@ onBeforeUnmount(() => {
         <span>{{ tag.name }}</span>
       </label>
     </fieldset>
-
-    <button class="submit-button" type="submit">検索を実行</button>
   </form>
 </template>
 
