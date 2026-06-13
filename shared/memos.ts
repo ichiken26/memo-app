@@ -63,13 +63,13 @@ export const createUniqueMemoId = (date: string, title: string, existingMemos: P
 export const createUniqueTagId = (date: string, name: string, existingTags: Pick<MemoTag, 'id'>[]) =>
   createUniqueId(createTagId(date, name), existingTags.map((tag) => tag.id))
 
-export const tags: MemoTag[] = [
-  { id: 'tag-20260501-Product', name: 'Product', color: '#2563eb' },
-  { id: 'tag-20260501-Research', name: 'Research', color: '#059669' },
-  { id: 'tag-20260501-Meeting', name: 'Meeting', color: '#dc2626' },
-  { id: 'tag-20260501-Idea', name: 'Idea', color: '#7c3aed' },
-  { id: 'tag-20260501-Personal', name: 'Personal', color: '#ea580c' }
-]
+const TAG_PRODUCT: MemoTag = { id: 'tag-20260501-Product', name: 'Product', color: '#2563eb' }
+const TAG_RESEARCH: MemoTag = { id: 'tag-20260501-Research', name: 'Research', color: '#059669' }
+const TAG_MEETING: MemoTag = { id: 'tag-20260501-Meeting', name: 'Meeting', color: '#dc2626' }
+const TAG_IDEA: MemoTag = { id: 'tag-20260501-Idea', name: 'Idea', color: '#7c3aed' }
+const TAG_PERSONAL: MemoTag = { id: 'tag-20260501-Personal', name: 'Personal', color: '#ea580c' }
+
+export const tags: MemoTag[] = [TAG_PRODUCT, TAG_RESEARCH, TAG_MEETING, TAG_IDEA, TAG_PERSONAL]
 
 export const memos: Memo[] = [
   {
@@ -78,7 +78,7 @@ export const memos: Memo[] = [
     title: 'タグ検索 UI の検討',
     body: '複数タグを指定した場合は AND 条件で絞り込む。検索履歴は直近 5 件を表示し、検索語の再利用をしやすくする。',
     updatedAt: '2026-05-12',
-    tags: [tags[0], tags[1], tags[3]]
+    tags: [TAG_PRODUCT, TAG_RESEARCH, TAG_IDEA]
   },
   {
     id: 'memo-20260510-5月定例ミーティング議事録',
@@ -86,7 +86,7 @@ export const memos: Memo[] = [
     title: '5月定例ミーティング議事録',
     body: '認証、メモ一覧、タグ別詳細、検索画面の導線を確認。API はタグ ID とタグ名のセットを受け取る。',
     updatedAt: '2026-05-10',
-    tags: [tags[0], tags[2]]
+    tags: [TAG_PRODUCT, TAG_MEETING]
   },
   {
     id: 'memo-20260508-Nuxt-ルーティング調査',
@@ -94,7 +94,7 @@ export const memos: Memo[] = [
     title: 'Nuxt ルーティング調査',
     body: 'pages ディレクトリで /search、/memo/{id}、/tag/{id} を構成する。クエリには表示用のタグ名を保持する。',
     updatedAt: '2026-05-08',
-    tags: [tags[1]]
+    tags: [TAG_RESEARCH]
   },
   {
     id: 'memo-20260506-買い物と週末タスク',
@@ -102,7 +102,7 @@ export const memos: Memo[] = [
     title: '買い物と週末タスク',
     body: '文房具、付箋、ノートを購入する。個人タスクはプロジェクトタグと分けて管理する。',
     updatedAt: '2026-05-06',
-    tags: [tags[4], tags[3]]
+    tags: [TAG_PERSONAL, TAG_IDEA]
   },
   {
     id: 'memo-20260505-認証導入メモ',
@@ -110,7 +110,7 @@ export const memos: Memo[] = [
     title: '認証導入メモ',
     body: 'Google OAuth クライアント ID とシークレットを取得し、Nuxt のランタイム設定に登録する。',
     updatedAt: '2026-05-05',
-    tags: [tags[0], tags[1]]
+    tags: [TAG_PRODUCT, TAG_RESEARCH]
   },
   {
     id: 'memo-20260503-検索-API-テスト観点',
@@ -118,7 +118,7 @@ export const memos: Memo[] = [
     title: '検索 API テスト観点',
     body: 'タグなし、単一タグ、複数タグ、検索ワードのみ、0件のケースを確認する。',
     updatedAt: '2026-05-03',
-    tags: [tags[1], tags[2]]
+    tags: [TAG_RESEARCH, TAG_MEETING]
   }
 ]
 

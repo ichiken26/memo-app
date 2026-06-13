@@ -1,4 +1,6 @@
-import { createMemoId, createTagColor, createTagId, getToday, type Memo, type MemoTag } from '../../shared/memos.ts'
+/// <reference path="../../worker-configuration.d.ts" />
+
+import { createMemoId, createTagColor, createTagId, getToday, type Memo, type MemoTag } from '../../shared/memos'
 
 type D1Event = {
   context?: {
