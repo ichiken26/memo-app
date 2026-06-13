@@ -49,10 +49,10 @@ const confirmMemoDelete = async () => {
           </div>
         </div>
         <nav class="nav-actions" aria-label="主要ナビゲーション">
-          <NuxtLink class="button-link primary-link" to="/memo/new">新規メモ</NuxtLink>
-          <NuxtLink class="button-link" to="/tags">タグ一覧</NuxtLink>
-          <NuxtLink class="button-link" to="/search">検索</NuxtLink>
-          <button class="ghost-button" type="button" @click="signOut">ログアウト</button>
+          <NuxtLink class="button-link primary-link memo-link" to="/memo/new">新規メモ</NuxtLink>
+          <NuxtLink class="button-link tag-link" to="/tags">タグ一覧</NuxtLink>
+          <NuxtLink class="button-link search-link" to="/search">検索</NuxtLink>
+          <button class="ghost-button logout-link" type="button" @click="signOut">Log Out</button>
         </nav>
       </header>
 
@@ -219,6 +219,18 @@ h1 {
   color: #ffffff;
 }
 
+.memo-link{
+  font-size: 13px;
+}
+
+.tag-link{
+  font-size: 12px;
+}
+
+.search-link{
+  font-size: 15px;
+}
+
 .primary-link {
   background: #2563eb;
 }
@@ -228,6 +240,12 @@ h1 {
   padding: 0 18px;
   background: #ffffff;
   color: #1f2933;
+}
+
+.ghost-button.logout-link {
+  border-color: #991b1b;
+  background: #b91c1c;
+  color: #ffffff;
 }
 
 .welcome-line {
