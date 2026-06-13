@@ -47,6 +47,8 @@ const save = () => emit('save', editorValue.value)
       type="text"
       placeholder="タイトル"
       aria-label="メモタイトル"
+      @keydown.ctrl.enter.prevent="save"
+      @keydown.meta.enter.prevent="save"
     >
 
     <TagPicker
@@ -60,6 +62,8 @@ const save = () => emit('save', editorValue.value)
       class="body-input"
       placeholder="メモを入力"
       aria-label="メモ本文"
+      @keydown.ctrl.enter.prevent="save"
+      @keydown.meta.enter.prevent="save"
     />
 
     <footer class="editor-footer">
