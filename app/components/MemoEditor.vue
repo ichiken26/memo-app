@@ -57,15 +57,6 @@ const save = () => emit('save', editorValue.value)
       @create-tag="(name, selectTag) => emit('createTag', name, selectTag)"
     />
 
-    <textarea
-      v-model="body"
-      class="body-input"
-      placeholder="メモを入力"
-      aria-label="メモ本文"
-      @keydown.ctrl.enter.prevent="save"
-      @keydown.meta.enter.prevent="save"
-    />
-
     <footer class="editor-footer">
       <span v-if="mode === 'edit'" class="save-status">{{ saveStatus }}</span>
       <span v-else class="save-status">作成時に保存されます</span>
@@ -74,12 +65,23 @@ const save = () => emit('save', editorValue.value)
         <button v-if="mode === 'edit'" class="delete-button" type="button" @click="emit('delete')">削除</button>
       </div>
     </footer>
+
+    <textarea
+      v-model="body"
+      class="body-input"
+      placeholder="メモを入力"
+      aria-label="メモ本文"
+      @keydown.ctrl.enter.prevent="save"
+      @keydown.meta.enter.prevent="save"
+    />
   </form>
 </template>
 
 <style scoped>
 .memo-editor {
   display: grid;
+  grid-template-rows: auto auto auto minmax(280px, 1fr);
+  min-height: calc(100dvh - 10rem);
   border: 1px solid #d9d8d2;
   border-radius: 8px;
   background: #ffffff;
@@ -104,6 +106,7 @@ const save = () => emit('save', editorValue.value)
 
 .body-input {
   min-height: 280px;
+  height: 100%;
   resize: vertical;
   font-size: 18px;
   line-height: 1.8;
@@ -114,8 +117,8 @@ const save = () => emit('save', editorValue.value)
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-top: 1px solid #ecebe5;
-  padding-top: 14px;
+  border-bottom: 1px solid #ecebe5;
+  padding-bottom: 14px;
 }
 
 .save-status {
