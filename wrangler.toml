@@ -1,4 +1,4 @@
-name = "memo-app-nuxt-training"
+name = "memo-app"
 compatibility_date = "2026-05-17"
 main = ".output/server/index.mjs"
 compatibility_flags = ["nodejs_compat", "no_nodejs_compat_v2"]
