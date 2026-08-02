@@ -13,18 +13,9 @@ const userMemos = computed(() =>
 );
 
 const histories = ref(["認証", "タグ検索", "Nuxt", "API"]);
-const searchWord = ref(String(route.query.q ?? route.query.search_word ?? ""));
-const selectedTagIds = ref<string[]>(
-  typeof route.query.tag === "string"
-    ? route.query.tag
-        .split(",")
-        .map(
-          (tagName) =>
-            memoStore.tags.value.find((tag) => tag.name === tagName)?.id,
-        )
-        .filter((tagId): tagId is string => Boolean(tagId))
-    : [],
-);
+const searchWord = ref("");
+const selectedTagIds = ref<string[]>([]);
+const isSyncingFromQuery = ref(false);
 
 const selectedTags = computed(() =>
   memoStore.tags.value.filter((tag) => selectedTagIds.value.includes(tag.id)),
@@ -43,6 +34,66 @@ const results = computed(
     }),
 );
 
+const getQueryTokens = () =>
+  String(route.query.q ?? route.query.search_word ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+const syncStateFromQuery = async () => {
+  const tokens = getQueryTokens();
+  const tokenNames = new Set(tokens.map((token) => token.toLocaleLowerCase()));
+  const matchedTags = memoStore.tags.value.filter((tag) =>
+    tokenNames.has(tag.name.toLocaleLowerCase()),
+  );
+  const matchedNames = new Set(
+    matchedTags.map((tag) => tag.name.toLocaleLowerCase()),
+  );
+
+  isSyncingFromQuery.value = true;
+  selectedTagIds.value = matchedTags.map((tag) => tag.id);
+  searchWord.value = tokens
+    .filter((token) => !matchedNames.has(token.toLocaleLowerCase()))
+    .join(" ");
+  await nextTick();
+  isSyncingFromQuery.value = false;
+};
+
+watch(
+  [
+    () => route.query.q,
+    () => route.query.search_word,
+    () => memoStore.tags.value,
+  ],
+  syncStateFromQuery,
+  { immediate: true, deep: true },
+);
+
+const canonicalQuery = () =>
+  [
+    ...searchWord.value.trim().split(/\s+/).filter(Boolean),
+    ...selectedTags.value.map((tag) => tag.name),
+  ]
+    .filter(
+      (value, index, values) =>
+        values.findIndex(
+          (candidate) =>
+            candidate.toLocaleLowerCase() === value.toLocaleLowerCase(),
+        ) === index,
+    )
+    .join(" ");
+
+watch(
+  selectedTagIds,
+  async () => {
+    if (isSyncingFromQuery.value) return;
+    directResults.value = null;
+    const q = canonicalQuery();
+    await router.replace({ path: "/search", query: q ? { q } : {} });
+  },
+  { deep: true },
+);
+
 const submitSearch = async () => {
   directResults.value = null;
   const trimmedWord = searchWord.value.trim();
@@ -55,10 +106,7 @@ const submitSearch = async () => {
     query: {
       ...(trimmedWord || selectedTags.value.length
         ? {
-            q: [
-              ...trimmedWord.split(/\s+/).filter(Boolean),
-              ...selectedTags.value.map((tag) => tag.name),
-            ].join(" "),
+            q: canonicalQuery(),
           }
         : {}),
     },
