@@ -43,6 +43,10 @@
     #a01515 100%
   );
   --button-focus: rgba(49, 93, 168, 0.34);
+  --tag-selected-bg: #dbe8ff;
+  --tag-selected-bg-hover: #c9dcff;
+  --tag-selected-border: #315da8;
+  --tag-selected-text: #17345f;
 }
 
 .global-tools-target {
@@ -92,6 +96,10 @@
     #9e252d 100%
   );
   --button-focus: rgba(169, 199, 255, 0.48);
+  --tag-selected-bg: #294f86;
+  --tag-selected-bg-hover: #35639f;
+  --tag-selected-border: #a9c7ff;
+  --tag-selected-text: #ffffff;
 }
 
 * {

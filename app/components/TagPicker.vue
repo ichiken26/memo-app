@@ -155,9 +155,21 @@ const closePicker = async () => {
 }
 
 .tag-option.selected {
-  border-color: var(--text);
-  background: #e8edf2;
-  color: var(--text);
+  border-color: var(--tag-selected-border) !important;
+  background: var(--tag-selected-bg) !important;
+  color: var(--tag-selected-text) !important;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--tag-selected-border) 35%, transparent);
+}
+
+.tag-option.selected:hover {
+  background: var(--tag-selected-bg-hover) !important;
+  color: var(--tag-selected-text) !important;
+}
+
+.tag-option:focus-visible {
+  outline: 3px solid var(--button-focus);
+  outline-offset: 2px;
 }
 
 .tag-dot {
