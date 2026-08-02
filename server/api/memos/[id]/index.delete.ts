@@ -1,13 +1,13 @@
-import { deleteMemo, getDb } from '../../../utils/d1'
-import { requireQueryString } from '../../../utils/request'
+import { deleteMemo, getDb } from "../../../utils/d1";
+import { requireFirebaseUser } from "../../../utils/firebaseAuth";
 
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id') ?? ''
-  const ownerUid = requireQueryString(event, 'ownerUid')
+  const id = getRouterParam(event, "id") ?? "";
+  const { uid: ownerUid } = await requireFirebaseUser(event);
 
   if (!(await deleteMemo(getDb(event), id, ownerUid))) {
-    throw createError({ statusCode: 404, statusMessage: 'Memo not found' })
+    throw createError({ statusCode: 404, statusMessage: "Memo not found" });
   }
 
-  return { deleted: true }
-})
+  return { deleted: true };
+});

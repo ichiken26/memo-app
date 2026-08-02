@@ -1,25 +1,27 @@
-import { createTag, getDb } from '../utils/d1'
-import { requireBodyString } from '../utils/request'
+import { createTag, getDb } from "../utils/d1";
+import { requireFirebaseUser } from "../utils/firebaseAuth";
 
 type CreateTagBody = {
-  ownerUid: string
-  name: string
-}
+  name: string;
+};
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<CreateTagBody>(event)
-  const name = body.name?.trim()
+  const body = await readBody<CreateTagBody>(event);
+  const name = body.name?.trim();
 
   if (!name) {
-    throw createError({ statusCode: 400, statusMessage: 'Tag name is required' })
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Tag name is required",
+    });
   }
 
-  const ownerUid = requireBodyString(body, 'ownerUid')
+  const { uid: ownerUid } = await requireFirebaseUser(event);
 
-  const { tag, created } = await createTag(getDb(event), ownerUid, name)
+  const { tag, created } = await createTag(getDb(event), ownerUid, name);
 
   if (created) {
-    setResponseStatus(event, 201)
+    setResponseStatus(event, 201);
   }
-  return { tag }
-})
+  return { tag };
+});

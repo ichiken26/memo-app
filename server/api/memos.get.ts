@@ -1,10 +1,10 @@
-import { getDb, listMemosByOwner } from '../utils/d1'
-import { requireQueryString } from '../utils/request'
+import { getDb, listMemosByOwner } from "../utils/d1";
+import { requireFirebaseUser } from "../utils/firebaseAuth";
 
 export default defineEventHandler(async (event) => {
-  const ownerUid = requireQueryString(event, 'ownerUid')
+  const { uid: ownerUid } = await requireFirebaseUser(event);
 
   return {
-    memos: await listMemosByOwner(getDb(event), ownerUid)
-  }
-})
+    memos: await listMemosByOwner(getDb(event), ownerUid),
+  };
+});
