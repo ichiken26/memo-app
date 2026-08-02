@@ -1,170 +1,193 @@
 <script setup lang="ts">
-import type { Memo, MemoTag } from '~~/shared/memos'
-
-const props = defineProps<{
-  memo?: Memo | null
-  availableTags: MemoTag[]
-  mode: 'create' | 'edit'
-  saveStatus?: string
-}>()
-
+const props = defineProps<{ modelValue: string; ownerUid?: string }>()
 const emit = defineEmits<{
-  (event: 'save', value: { title: string; body: string; tags: MemoTag[] }): void
-  (event: 'change', value: { title: string; body: string; tags: MemoTag[] }): void
-  (event: 'createTag', name: string, selectTag: (tag: MemoTag) => void): void
-  (event: 'delete'): void
+  (e: 'update:modelValue', v: string): void
+  (e: 'save'): void
 }>()
-
-const title = ref(props.memo?.title ?? '')
-const body = ref(props.memo?.body ?? '')
-const selectedTags = ref<MemoTag[]>(props.memo?.tags.map((tag) => ({ ...tag })) ?? [])
-
-watch(
-  () => props.memo?.id,
-  () => {
-    title.value = props.memo?.title ?? ''
-    body.value = props.memo?.body ?? ''
-    selectedTags.value = props.memo?.tags.map((tag) => ({ ...tag })) ?? []
+const body = computed({
+  get: () => props.modelValue,
+  set: (v) => emit('update:modelValue', v),
+})
+const textarea = ref<HTMLTextAreaElement | null>(null),
+  menu = ref({ open: false, x: 0, y: 0 }),
+  file = ref<HTMLInputElement | null>(null),
+  uploading = ref(false)
+const { format, insertMedia } = useMemoFormatting(body, textarea)
+const close = () => (menu.value.open = false)
+const context = (e: MouseEvent) => {
+  menu.value = { open: true, x: e.clientX, y: e.clientY }
+}
+const applyFormat = (kind: 'bold' | 'italic' | 'red') => {
+  format(kind)
+  close()
+}
+const addLink = () => {
+  const selected =
+    textarea.value?.value.slice(
+      textarea.value.selectionStart,
+      textarea.value.selectionEnd,
+    ) || 'リンク'
+  const url = window.prompt('リンクURL (https://)')
+  if (url && /^https?:\/\//.test(url)) insertMedia('link', selected, url)
+  close()
+}
+const upload = async (blob: File) => {
+  if (!blob.type.startsWith('image/')) return
+  uploading.value = true
+  try {
+    const form = new FormData()
+    form.append('image', blob)
+    if (props.ownerUid) form.append('ownerUid', props.ownerUid)
+    const result = await $fetch<{ url: string }>('/api/images', {
+      method: 'POST',
+      body: form,
+    })
+    insertMedia('img', blob.name || '画像', result.url)
+  } finally {
+    uploading.value = false
   }
-)
-
-const editorValue = computed(() => ({
-  title: title.value,
-  body: body.value,
-  tags: selectedTags.value
-}))
-
-watch(editorValue, (value) => emit('change', value), { deep: true })
-
-const save = () => emit('save', editorValue.value)
+}
+const choose = () => {
+  file.value?.click()
+  close()
+}
+const onFiles = (files: FileList | null) => {
+  const image = files?.[0]
+  if (image) upload(image)
+}
+const keydown = (e: KeyboardEvent) => {
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault()
+    emit('save')
+  } else if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'b') {
+    e.preventDefault()
+    format('bold')
+  } else if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'i') {
+    e.preventDefault()
+    format('italic')
+  } else if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'r') {
+    e.preventDefault()
+    format('red')
+  }
+}
+const paste = (e: ClipboardEvent) => {
+  const image = Array.from(e.clipboardData?.files || []).find((f) =>
+    f.type.startsWith('image/'),
+  )
+  if (image) {
+    e.preventDefault()
+    upload(image)
+    return
+  }
+  const text = e.clipboardData?.getData('text/plain').trim() || ''
+  if (/^https?:\/\/\S+$/.test(text)) {
+    e.preventDefault()
+    let label = text
+    try {
+      label = new URL(text).hostname
+    } catch {}
+    insertMedia('link', label, text)
+  }
+}
 </script>
-
 <template>
-  <form class="memo-editor" @submit.prevent="save">
-    <input
-      v-model="title"
-      class="title-input"
-      type="text"
-      placeholder="タイトル"
-      aria-label="メモタイトル"
-      @keydown.ctrl.enter.prevent="save"
-      @keydown.meta.enter.prevent="save"
-    >
-
-    <TagPicker
-      v-model="selectedTags"
-      :available-tags="availableTags"
-      @create-tag="(name, selectTag) => emit('createTag', name, selectTag)"
-    />
-
-    <footer class="editor-footer">
-      <span v-if="mode === 'edit'" class="save-status">{{ saveStatus }}</span>
-      <span v-else class="save-status">作成時に保存されます</span>
-      <div class="editor-actions">
-        <button class="save-button" type="submit">保存</button>
-        <button v-if="mode === 'edit'" class="delete-button" type="button" @click="emit('delete')">削除</button>
-      </div>
-    </footer>
-
+  <div class="editor-area" @click="close">
     <textarea
+      ref="textarea"
       v-model="body"
-      class="body-input"
-      placeholder="メモを入力"
       aria-label="メモ本文"
-      @keydown.ctrl.enter.prevent="save"
-      @keydown.meta.enter.prevent="save"
+      placeholder="Markdownでメモを入力"
+      @contextmenu.prevent.stop="context"
+      @keydown="keydown"
+      @paste="paste"
+      @dragover.prevent
+      @drop.prevent="onFiles($event.dataTransfer?.files || null)"
     />
-  </form>
+    <span v-if="uploading" class="uploading">画像をアップロード中…</span>
+    <input
+      ref="file"
+      hidden
+      type="file"
+      accept="image/png,image/jpeg,image/gif,image/webp"
+      @change="onFiles(($event.target as HTMLInputElement).files)"
+    />
+    <div
+      v-if="menu.open"
+      class="context"
+      :style="{ left: `${menu.x}px`, top: `${menu.y}px` }"
+      @click.stop
+    >
+      <button @click="applyFormat('bold')">
+        <b>B</b>
+        太字
+      </button>
+      <button @click="applyFormat('italic')">
+        <i>I</i>
+        斜体
+      </button>
+      <button @click="applyFormat('red')">
+        <span class="red">R</span>
+        赤字
+      </button>
+      <button @click="choose">画像挿入</button>
+      <button @click="addLink">ハイパーリンク</button>
+    </div>
+  </div>
 </template>
-
 <style scoped>
-.memo-editor {
-  display: grid;
-  grid-template-rows: auto auto auto minmax(280px, 1fr);
-  min-height: calc(100dvh - 10rem);
-  border: 1px solid #d9d8d2;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 22px;
-  gap: 16px;
+.editor-area {
+  position: relative;
+  min-height: 480px;
 }
-
-.title-input,
-.body-input {
+.editor-area textarea {
   width: 100%;
-  border: 0;
-  color: #1f2933;
-  font-family: inherit;
-  outline: none;
-}
-
-.title-input {
-  font-size: clamp(28px, 4vw, 44px);
-  font-weight: 800;
-  line-height: 1.15;
-}
-
-.body-input {
-  min-height: 280px;
   height: 100%;
+  min-height: 480px;
   resize: vertical;
-  font-size: 18px;
+  border: 0;
+  background: var(--panel);
+  color: var(--text);
+  padding: 22px;
+  outline: none;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 16px;
   line-height: 1.8;
 }
-
-.editor-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid #ecebe5;
-  padding-bottom: 14px;
+.context {
+  position: fixed;
+  z-index: 80;
+  display: grid;
+  min-width: 180px;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
 }
-
-.save-status {
-  color: #52616b;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.editor-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.save-button,
-.delete-button {
-  min-height: 40px;
+.context button {
   border: 0;
-  border-radius: 8px;
-  color: #ffffff;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  padding: 9px 12px;
+  text-align: left;
   cursor: pointer;
+}
+.context button:hover {
+  background: var(--panel-soft);
+}
+.red {
+  color: #dc2626;
   font-weight: 800;
-  padding: 0 18px;
 }
-
-.save-button {
-  background: #2563eb;
-}
-
-.delete-button {
-  background: #dc2626;
-}
-
-@media (max-width: 560px) {
-  .editor-footer {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .editor-actions {
-    width: 100%;
-  }
-
-  .save-button,
-  .delete-button {
-    flex: 1;
-  }
+.uploading {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: var(--text);
+  color: var(--panel);
+  font-size: 12px;
 }
 </style>

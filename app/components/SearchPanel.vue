@@ -68,6 +68,7 @@ onBeforeUnmount(() => {
     <label class="field-label" for="search-word">検索ワード</label>
     <div ref="searchBox" class="search-box">
       <input
+        data-search-input
         id="search-word"
         v-model="searchWordModel"
         name="search-word"
@@ -96,9 +97,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .search-panel {
   display: grid;
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   padding: 22px;
   gap: 16px;
 }
@@ -120,7 +121,7 @@ input[type='search'] {
   border: 1px solid #cfd3d8;
   border-radius: 8px;
   padding: 0 14px;
-  color: #1f2933;
+  color: var(--text);
   font-size: 16px;
 }
 
@@ -132,17 +133,17 @@ input[type='search'] {
   left: 0;
   display: grid;
   overflow: hidden;
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   box-shadow: 0 16px 30px rgba(31, 41, 51, 0.12);
 }
 
 .history-popover button {
   border: 0;
   padding: 12px 14px;
-  background: #ffffff;
-  color: #1f2933;
+  background: var(--panel);
+  color: var(--text);
   text-align: left;
   cursor: pointer;
 }
@@ -170,7 +171,7 @@ input[type='search'] {
   min-height: 38px;
   align-items: center;
   gap: 8px;
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0 12px;
   cursor: pointer;
@@ -180,8 +181,8 @@ input[type='search'] {
   min-height: 42px;
   border: 0;
   border-radius: 8px;
-  background: #1f2933;
-  color: #ffffff;
+  background: var(--text);
+  color: var(--panel);
   cursor: pointer;
   font-weight: 800;
 }

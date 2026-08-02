@@ -1,6 +1,6 @@
-import type { MemoTag } from '../../shared/memos.ts'
-import { getDb, searchMemos } from '../utils/d1.ts'
-import { requireBodyString } from '../utils/request.ts'
+import type { MemoTag } from '../../shared/memos'
+import { getDb, searchMemos } from '../utils/d1'
+import { requireBodyString } from '../utils/request'
 
 type SearchRequestBody = {
   ownerUid?: string

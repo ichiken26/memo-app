@@ -50,9 +50,9 @@ const emit = defineEmits<{
   width: min(420px, 100%);
   border: 1px solid #fecaca;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   box-shadow: 0 24px 70px rgba(31, 41, 51, 0.22);
-  color: #1f2933;
+  color: var(--text);
   padding: 24px;
 }
 
@@ -74,7 +74,7 @@ h2 {
 
 p {
   margin: 10px 0 0;
-  color: #52616b;
+  color: var(--muted);
   line-height: 1.7;
 }
 
@@ -96,13 +96,13 @@ p {
 
 .cancel-button {
   border: 1px solid #cfd3d8;
-  background: #ffffff;
-  color: #1f2933;
+  background: var(--panel);
+  color: var(--text);
 }
 
 .confirm-button {
   border: 0;
   background: #dc2626;
-  color: #ffffff;
+  color: var(--panel);
 }
 </style>

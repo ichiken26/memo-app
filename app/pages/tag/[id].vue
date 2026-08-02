@@ -53,8 +53,8 @@ const confirmMemoDelete = async () => {
 <style scoped>
 .tag-shell {
   min-height: 100vh;
-  background: #f7f7f4;
-  color: #1f2933;
+  background: var(--bg);
+  color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   padding: 28px;
 }
@@ -81,7 +81,7 @@ a {
 
 .eyebrow {
   margin: 0 0 4px;
-  color: #52616b;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;
@@ -101,7 +101,7 @@ h1 {
   display: block;
   border: 1px solid #deddd6;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   padding: 18px;
 }
 </style>

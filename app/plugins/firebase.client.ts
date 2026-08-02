@@ -18,7 +18,7 @@ export default defineNuxtPlugin(() => {
   )
   const firebaseApp: FirebaseApp | null = isConfigured
     ? getApps().length > 0
-      ? getApps()[0]
+      ? getApps()[0]!
       : initializeApp(firebaseConfig)
     : null
   const firebaseAuth: Auth | null = firebaseApp ? getAuth(firebaseApp) : null

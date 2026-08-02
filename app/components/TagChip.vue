@@ -50,11 +50,11 @@ const emit = defineEmits<{
   min-height: 28px;
   align-items: center;
   gap: 6px;
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 4px 9px;
-  background: #f7f7f4;
-  color: #52616b;
+  background: var(--bg);
+  color: var(--muted);
   font-size: 12px;
   font-weight: 800;
   text-decoration: none;
@@ -69,11 +69,11 @@ const emit = defineEmits<{
 .remove-button {
   width: 24px;
   height: 24px;
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 50%;
   margin-left: -5px;
-  background: #ffffff;
-  color: #52616b;
+  background: var(--panel);
+  color: var(--muted);
   cursor: pointer;
   font-size: 12px;
   font-weight: 800;

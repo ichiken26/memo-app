@@ -1,5 +1,5 @@
-import { getDb, updateTag } from '../../../utils/d1.ts'
-import { requireBodyString } from '../../../utils/request.ts'
+import { getDb, updateTag } from '../../../utils/d1'
+import { requireBodyString } from '../../../utils/request'
 
 type UpdateTagBody = {
   name?: string

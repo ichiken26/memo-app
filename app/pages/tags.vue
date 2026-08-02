@@ -12,6 +12,7 @@ useLoadMemoStoreForUser(user, memoStore)
 
 const presetColors = ['#2563eb', '#059669', '#dc2626', '#7c3aed', '#ea580c', '#0891b2', '#4f46e5', '#0f766e', '#be123c']
 const drafts = reactive<Record<string, TagDraft>>({})
+const getDraft = (tag: MemoTag) => drafts[tag.id] ?? (drafts[tag.id] = { name: tag.name, color: tag.color })
 const newTagName = ref('')
 const newTagColor = ref('#2563eb')
 const statusMessage = ref('')
@@ -180,7 +181,7 @@ onBeforeUnmount(() => {
           <span>{{ drafts[tag.id]?.name || tag.name }}</span>
         </div>
 
-        <input v-model="drafts[tag.id].name" class="name-input" type="text" aria-label="タグ名">
+        <input v-model="getDraft(tag).name" class="name-input" type="text" aria-label="タグ名">
 
         <div class="color-tools">
           <div class="preset-colors" aria-label="タグのプリセット色">
@@ -192,12 +193,12 @@ onBeforeUnmount(() => {
               type="button"
               :aria-label="`${color} を選択`"
               :style="{ backgroundColor: color }"
-              @click="drafts[tag.id].color = color"
+              @click="getDraft(tag).color = color"
             />
           </div>
           <label class="color-field">
             <span :style="{ backgroundColor: drafts[tag.id]?.color ?? tag.color }" />
-            <input v-model="drafts[tag.id].color" type="color" aria-label="タグの色を自由に選択">
+            <input v-model="getDraft(tag).color" type="color" aria-label="タグの色を自由に選択">
           </label>
         </div>
 
@@ -222,8 +223,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .tags-shell {
   min-height: 100vh;
-  background: #f7f7f4;
-  color: #1f2933;
+  background: var(--bg);
+  color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   padding: 28px;
 }
@@ -255,7 +256,7 @@ a {
 
 .eyebrow {
   margin: 0 0 4px;
-  color: #52616b;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;
@@ -276,14 +277,14 @@ h1 {
   justify-content: center;
   border: 0;
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--panel);
   cursor: pointer;
   font-weight: 800;
   padding: 0 16px;
 }
 
 .back-link {
-  background: #1f2933;
+  background: var(--text);
 }
 
 .save-button {
@@ -302,9 +303,9 @@ h1 {
 .create-panel,
 .tag-row,
 .empty {
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
 }
 
 .create-panel {
@@ -325,7 +326,7 @@ h1 {
   min-height: 40px;
   border: 1px solid #cfd3d8;
   border-radius: 8px;
-  color: #1f2933;
+  color: var(--text);
   font: inherit;
   padding: 0 12px;
 }
@@ -347,7 +348,7 @@ h1 {
   width: 24px;
   height: 24px;
   min-height: 0;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--panel);
   border-radius: 50%;
   box-shadow: 0 0 0 1px #cfd3d8;
   cursor: pointer;
@@ -355,7 +356,7 @@ h1 {
 }
 
 .preset-button.selected {
-  box-shadow: 0 0 0 2px #1f2933;
+  box-shadow: 0 0 0 2px var(--text);
 }
 
 .color-field {
@@ -364,9 +365,9 @@ h1 {
   height: 28px;
   align-items: center;
   justify-content: center;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--panel);
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--panel);
   box-shadow: 0 0 0 1px #cfd3d8;
   cursor: pointer;
 }
@@ -388,7 +389,7 @@ h1 {
 
 .status-message {
   margin-top: 12px;
-  color: #52616b;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 800;
 }
@@ -425,7 +426,7 @@ h1 {
 
 .empty {
   padding: 24px;
-  color: #52616b;
+  color: var(--muted);
   text-align: center;
 }
 
