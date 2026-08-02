@@ -6,16 +6,16 @@ type AuthUser = {
 
 export const useLoadMemoStoreForUser = (
   user: Ref<AuthUser | null>,
-  memoStore = useMemoStore()
+  memoStore = useMemoStore(),
 ) => {
   watch(
     () => user.value?.uid,
     (ownerUid) => {
       if (ownerUid) {
-        memoStore.loadForOwner(ownerUid)
+        void memoStore.loadForOwner(ownerUid)
       }
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   return memoStore

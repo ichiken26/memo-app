@@ -2,12 +2,50 @@
 import { UNTAGGED_TAG, groupMemoListByTag, type Memo } from '~~/shared/memos'
 
 const memoStore = useMemoStore()
-const { user, isAuthenticated, isReady, isConfigured, displayName, authError, signInWithGoogle, signOut } = useFirebaseAuth()
+const {
+  user,
+  isAuthenticated,
+  isReady,
+  isConfigured,
+  displayName,
+  authError,
+  signInWithGoogle,
+  signOut,
+} = useFirebaseAuth()
 useLoadMemoStoreForUser(user, memoStore)
 
-const userMemos = computed(() => (user.value ? memoStore.getMemosByOwner(user.value.uid) : []))
-const tagGroups = computed(() => groupMemoListByTag(userMemos.value, memoStore.tags.value))
+const userMemos = computed(() =>
+  user.value ? memoStore.getMemosByOwner(user.value.uid) : [],
+)
+const tagGroups = computed(() =>
+  groupMemoListByTag(userMemos.value, memoStore.tags.value),
+)
 const memoPendingDelete = ref<Memo | null>(null)
+const isCreatingStarter = ref(false)
+
+const retryLoad = async () => {
+  if (user.value) {
+    await memoStore.loadForOwner(user.value.uid, { force: true })
+  }
+}
+
+const createStarterMemo = async () => {
+  if (!user.value || isCreatingStarter.value) {
+    return
+  }
+
+  isCreatingStarter.value = true
+  try {
+    await memoStore.createMemo({
+      ownerUid: user.value.uid,
+      title: 'はじめてのメモ',
+      body: '# メモへようこそ\n\nこのメモはあなたのGoogleアカウント専用です。\n\n- Markdownで記述できます\n- Ctrl+Enterで保存できます\n- 右クリックから画像やリンクを挿入できます',
+      tags: [],
+    })
+  } finally {
+    isCreatingStarter.value = false
+  }
+}
 
 const confirmMemoDelete = async () => {
   if (!user.value || !memoPendingDelete.value) {
@@ -26,14 +64,27 @@ const confirmMemoDelete = async () => {
         <p class="eyebrow">Memo Workspace</p>
         <h1>Google 認証でメモにアクセス</h1>
         <p class="lead">
-          Firebase AuthのGoogleログインで、プロジェクトタグで整理したメモへアクセスします。
+          Firebase
+          AuthのGoogleログインで、プロジェクトタグで整理したメモへアクセスします。
         </p>
-        <button class="google-button" type="button" :disabled="!isReady || !isConfigured" @click="signInWithGoogle">
+        <button
+          class="google-button"
+          type="button"
+          :disabled="!isReady || !isConfigured"
+          @click="signInWithGoogle"
+        >
           <span class="google-mark">G</span>
-          {{ !isConfigured ? 'Firebase設定が必要です' : isReady ? 'Google でログイン' : '認証状態を確認中' }}
+          {{
+            !isConfigured
+              ? 'Firebase設定が必要です'
+              : isReady
+                ? 'Google でログイン'
+                : '認証状態を確認中'
+          }}
         </button>
         <p v-if="!isConfigured" class="auth-error">
-          .env の NUXT_PUBLIC_FIREBASE_* をFirebase Consoleの値に置き換えてください。
+          .env の NUXT_PUBLIC_FIREBASE_* をFirebase
+          Consoleの値に置き換えてください。
         </p>
         <p v-if="authError" class="auth-error">{{ authError }}</p>
       </div>
@@ -49,10 +100,18 @@ const confirmMemoDelete = async () => {
           </div>
         </div>
         <nav class="nav-actions" aria-label="主要ナビゲーション">
-          <NuxtLink class="button-link primary-link memo-link" to="/memo/new">新規メモ</NuxtLink>
+          <NuxtLink class="button-link primary-link memo-link" to="/memo/new">
+            新規メモ
+          </NuxtLink>
           <NuxtLink class="button-link tag-link" to="/tags">タグ一覧</NuxtLink>
           <NuxtLink class="button-link search-link" to="/search">検索</NuxtLink>
-          <button class="ghost-button logout-link" type="button" @click="signOut">Log Out</button>
+          <button
+            class="ghost-button logout-link"
+            type="button"
+            @click="signOut"
+          >
+            Log Out
+          </button>
         </nav>
       </header>
 
@@ -61,20 +120,87 @@ const confirmMemoDelete = async () => {
         <span>タグの見出しをクリックすると、該当タグの一覧へ移動します。</span>
       </section>
 
-      <section class="tag-grid" aria-label="タグごとのメモプレビュー">
-        <article v-for="group in tagGroups" :key="group.tag.id" class="tag-section">
-          <div v-if="group.tag.id === UNTAGGED_TAG.id" class="tag-heading untagged-heading">
-            <span class="tag-dot" :style="{ backgroundColor: group.tag.color }" />
+      <section
+        v-if="memoStore.isLoading.value"
+        class="data-state"
+        aria-live="polite"
+      >
+        <span class="state-spinner" aria-hidden="true" />
+        <div>
+          <strong>メモを取得しています</strong>
+          <p>ログインアカウントに紐づくデータを読み込んでいます。</p>
+        </div>
+      </section>
+
+      <section
+        v-else-if="memoStore.loadError.value"
+        class="data-state error-state"
+        role="alert"
+      >
+        <div>
+          <strong>メモを取得できませんでした</strong>
+          <p>{{ memoStore.loadError.value }}</p>
+        </div>
+        <button class="ghost-button" type="button" @click="retryLoad">
+          再試行
+        </button>
+      </section>
+
+      <section
+        v-else-if="memoStore.isLoaded.value && userMemos.length === 0"
+        class="data-state empty-state"
+      >
+        <div>
+          <strong>このアカウントのメモはまだありません</strong>
+          <p>
+            既存のデモデータは別の所有者に属するため表示されません。最初のメモを作成できます。
+          </p>
+        </div>
+        <button
+          class="starter-button"
+          type="button"
+          :disabled="isCreatingStarter"
+          @click="createStarterMemo"
+        >
+          {{ isCreatingStarter ? '作成中…' : 'サンプルメモを作成' }}
+        </button>
+      </section>
+
+      <section v-else class="tag-grid" aria-label="タグごとのメモプレビュー">
+        <article
+          v-for="group in tagGroups"
+          :key="group.tag.id"
+          class="tag-section"
+        >
+          <div
+            v-if="group.tag.id === UNTAGGED_TAG.id"
+            class="tag-heading untagged-heading"
+          >
+            <span
+              class="tag-dot"
+              :style="{ backgroundColor: group.tag.color }"
+            />
             <span>{{ group.tag.name }}</span>
             <span class="count">{{ group.memos.length }}</span>
           </div>
-          <NuxtLink v-else class="tag-heading" :to="`/tag/${group.tag.id}?tag=${encodeURIComponent(group.tag.name)}`">
-            <span class="tag-dot" :style="{ backgroundColor: group.tag.color }" />
+          <NuxtLink
+            v-else
+            class="tag-heading"
+            :to="`/tag/${group.tag.id}?tag=${encodeURIComponent(group.tag.name)}`"
+          >
+            <span
+              class="tag-dot"
+              :style="{ backgroundColor: group.tag.color }"
+            />
             <span>{{ group.tag.name }}</span>
             <span class="count">{{ group.memos.length }}</span>
           </NuxtLink>
 
-          <MemoPreviewList class="memo-list" :memos="group.memos" @delete="(memo) => memoPendingDelete = memo" />
+          <MemoPreviewList
+            class="memo-list"
+            :memos="group.memos"
+            @delete="(memo) => (memoPendingDelete = memo)"
+          />
         </article>
       </section>
 
@@ -96,9 +222,16 @@ const confirmMemoDelete = async () => {
 
 :global(body) {
   margin: 0;
-  background: #f7f7f4;
-  color: #1f2933;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
 }
 
 a {
@@ -119,16 +252,16 @@ a {
 
 .auth-panel {
   width: min(520px, 100%);
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   padding: 36px;
   box-shadow: 0 18px 45px rgba(31, 41, 51, 0.08);
 }
 
 .eyebrow {
   margin: 0 0 8px;
-  color: #52616b;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0;
@@ -143,7 +276,7 @@ h1 {
 
 .lead {
   margin: 18px 0 28px;
-  color: #52616b;
+  color: var(--muted);
   line-height: 1.8;
 }
 
@@ -163,8 +296,8 @@ h1 {
   width: 100%;
   gap: 12px;
   border: 1px solid #cfd3d8;
-  background: #ffffff;
-  color: #1f2933;
+  background: var(--panel);
+  color: var(--text);
   font-size: 16px;
 }
 
@@ -215,19 +348,19 @@ h1 {
 
 .button-link {
   padding: 0 18px;
-  background: #1f2933;
-  color: #ffffff;
+  background: var(--text);
+  color: var(--panel);
 }
 
-.memo-link{
+.memo-link {
   font-size: 13px;
 }
 
-.tag-link{
+.tag-link {
   font-size: 12px;
 }
 
-.search-link{
+.search-link {
   font-size: 15px;
 }
 
@@ -238,14 +371,14 @@ h1 {
 .ghost-button {
   border: 1px solid #cfd3d8;
   padding: 0 18px;
-  background: #ffffff;
-  color: #1f2933;
+  background: var(--panel);
+  color: var(--text);
 }
 
 .ghost-button.logout-link {
   border-color: #991b1b;
   background: #b91c1c;
-  color: #ffffff;
+  color: var(--panel);
 }
 
 .welcome-line {
@@ -253,12 +386,12 @@ h1 {
   max-width: 1180px;
   margin: 0 auto 26px;
   gap: 12px;
-  color: #52616b;
+  color: var(--muted);
   flex-wrap: wrap;
 }
 
 .welcome-line span:first-child {
-  color: #1f2933;
+  color: var(--text);
   font-weight: 800;
 }
 
@@ -279,7 +412,7 @@ h1 {
   min-height: 52px;
   align-items: center;
   gap: 10px;
-  border-bottom: 2px solid #1f2933;
+  border-bottom: 2px solid var(--text);
   font-size: 20px;
   font-weight: 800;
 }
@@ -296,12 +429,70 @@ h1 {
 
 .count {
   margin-left: auto;
-  color: #52616b;
+  color: var(--muted);
   font-size: 14px;
 }
 
 .memo-list {
   padding-top: 12px;
+}
+
+.data-state {
+  display: flex;
+  max-width: 1180px;
+  min-height: 112px;
+  margin: 0 auto 24px;
+  padding: 22px 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.data-state strong {
+  font-size: 17px;
+}
+
+.data-state p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.error-state {
+  border-color: color-mix(in srgb, var(--danger) 50%, var(--border));
+}
+
+.starter-button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--button-primary);
+  box-shadow: var(--button-shadow);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 20px;
+}
+
+.state-spinner {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 760px) {
@@ -325,6 +516,11 @@ h1 {
 
   .tag-grid {
     grid-template-columns: 1fr;
+  }
+
+  .data-state {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 </style>
