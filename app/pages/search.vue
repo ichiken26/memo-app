@@ -84,14 +84,16 @@ const canonicalQuery = () =>
     .join(" ");
 
 watch(
-  selectedTagIds,
+  [searchWord, selectedTagIds],
   async () => {
     if (isSyncingFromQuery.value) return;
     directResults.value = null;
     const q = canonicalQuery();
+    const currentQuery = String(route.query.q ?? "").trim();
+    if (currentQuery === q && route.query.search_word === undefined) return;
     await router.replace({ path: "/search", query: q ? { q } : {} });
   },
-  { deep: true },
+  { deep: true, flush: "post" },
 );
 
 const submitSearch = async () => {
