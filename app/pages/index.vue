@@ -262,7 +262,7 @@ a {
 .eyebrow {
   margin: 0 0 8px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -320,7 +320,7 @@ h1 {
 .auth-error {
   margin: 14px 0 0;
   color: #b91c1c;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.5;
 }
@@ -353,11 +353,11 @@ h1 {
 }
 
 .memo-link {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tag-link {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .search-link {

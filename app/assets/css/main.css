@@ -239,6 +239,7 @@ a {
 .logout-link,
 .confirm-button,
 .editor-header .actions .delete,
+.page-actions .delete-button,
 .tags-shell .delete-button {
   border-color: transparent !important;
   background: var(--button-danger) !important;
@@ -248,6 +249,7 @@ a {
 .logout-link:hover,
 .confirm-button:hover,
 .editor-header .actions .delete:hover,
+.page-actions .delete-button:hover,
 .tags-shell .delete-button:hover {
   background: var(--button-danger-hover) !important;
   box-shadow:

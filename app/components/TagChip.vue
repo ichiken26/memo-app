@@ -61,7 +61,7 @@ const emit = defineEmits<{
   padding: 4px 9px;
   background: var(--bg);
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -81,7 +81,7 @@ const emit = defineEmits<{
   background: var(--panel);
   color: var(--muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
 }
 </style>

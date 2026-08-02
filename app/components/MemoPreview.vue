@@ -158,7 +158,7 @@ const blocks = computed(() => parseMemo(body.value)),
   padding: 9px 18px;
   background: #fff7ed;
   color: #9a3412;
-  font-size: 13px;
+  font-size: 14px;
 }
 @media (max-width: 850px) {
   .split {

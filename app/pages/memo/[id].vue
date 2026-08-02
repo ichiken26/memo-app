@@ -258,7 +258,7 @@ a {
   gap: 12px;
   margin-bottom: 10px;
   color: #6b7280;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
 }
 
@@ -281,7 +281,7 @@ a {
   background: var(--primary);
 }
 .delete-button {
-  background: var(--danger);
+  background: var(--button-danger);
 }
 
 .ghost-button {

@@ -79,7 +79,7 @@ const createAndSelectTag = async (
 .eyebrow {
   margin: 0 0 4px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;

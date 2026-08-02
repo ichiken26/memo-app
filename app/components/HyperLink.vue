@@ -41,7 +41,7 @@ const host = computed(() => {
 .link-copy span {
   overflow: hidden;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

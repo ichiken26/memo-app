@@ -77,7 +77,7 @@ const emit = defineEmits<{
 .status {
   white-space: nowrap;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 .tag-row {

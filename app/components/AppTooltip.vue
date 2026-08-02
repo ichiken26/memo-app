@@ -45,7 +45,7 @@ withDefaults(defineProps<{ icon?: "?" | "!"; label: string }>(), { icon: "?" });
   background: var(--panel);
   box-shadow: var(--shadow);
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   opacity: 0;
   pointer-events: none;

@@ -206,7 +206,7 @@ const paste = (e: ClipboardEvent) => {
   border-radius: 7px;
   background: var(--text);
   color: var(--panel);
-  font-size: 12px;
+  font-size: 14px;
 }
 .upload-error {
   position: absolute;
@@ -218,6 +218,6 @@ const paste = (e: ClipboardEvent) => {
   border-radius: 8px;
   background: var(--button-danger);
   color: #ffffff;
-  font-size: 13px;
+  font-size: 14px;
 }
 </style>
