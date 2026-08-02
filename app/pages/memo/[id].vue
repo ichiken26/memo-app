@@ -156,13 +156,13 @@ onBeforeRouteLeave(() => {
   <main class="memo-shell">
     <header class="memo-header">
       <TopLogoLink />
-      <div data-shortcut-help-target class="global-tools-target" />
     </header>
 
     <section v-if="memo" class="memo-detail">
       <div class="detail-meta">
         <span>更新日: {{ memo.updatedAt }}</span>
         <div class="page-actions">
+          <div data-shortcut-help-target class="global-tools-target" />
           <button
             class="mode-toggle"
             type="button"
@@ -269,6 +269,10 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.page-actions .global-tools-target {
+  margin-left: 0;
 }
 .save-button,
 .delete-button {
