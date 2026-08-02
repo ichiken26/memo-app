@@ -4,8 +4,8 @@ const target = shallowRef<HTMLElement | null>(null);
 const isFloating = ref(true);
 let targetObserver: MutationObserver | null = null;
 const shortcuts = computed(() => [
-  "Ctrl+Alt+S: 検索",
-  "Ctrl+/: トップ",
+  "Ctrl+Alt+S: 検索画面へ遷移",
+  "Ctrl+/: トップ画面へ遷移",
   ...(route.path === "/search" ? ["Ctrl+Alt+L: 検索欄"] : []),
   ...(route.path.startsWith("/memo/")
     ? [

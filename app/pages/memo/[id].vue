@@ -241,9 +241,10 @@ a {
   flex: 0 0 auto;
   display: flex;
   width: 100%;
+  max-width: 1066px;
   min-height: 48px;
   align-items: center;
-  margin: 0;
+  margin: 0 auto;
 }
 
 .missing {
