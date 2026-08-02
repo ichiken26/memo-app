@@ -1,5 +1,5 @@
-import { getDb, getMemoByOwner } from '../../../utils/d1.ts'
-import { requireQueryString } from '../../../utils/request.ts'
+import { getDb, getMemoByOwner } from '../../../utils/d1'
+import { requireQueryString } from '../../../utils/request'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id') ?? ''

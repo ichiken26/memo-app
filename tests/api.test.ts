@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { beforeEach, describe, test } from 'node:test'
-import type { Memo, MemoTag } from '../shared/memos.ts'
+import type { Memo, MemoTag } from '../shared/memos'
 
 type TestEvent = {
   body?: unknown

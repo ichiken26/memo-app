@@ -1,5 +1,5 @@
-import { createTag, getDb } from '../utils/d1.ts'
-import { requireBodyString } from '../utils/request.ts'
+import { createTag, getDb } from '../utils/d1'
+import { requireBodyString } from '../utils/request'
 
 type CreateTagBody = {
   ownerUid: string

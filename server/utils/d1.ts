@@ -2,16 +2,6 @@
 
 import { createMemoId, createTagColor, createTagId, getToday, type Memo, type MemoTag } from '../../shared/memos'
 
-type D1Event = {
-  context?: {
-    cloudflare?: {
-      env?: {
-        DB?: D1Database
-      }
-    }
-  }
-}
-
 type MemoTagRow = {
   id: string
   ownerUid: string
@@ -33,8 +23,8 @@ type IdRow = {
   id: string
 }
 
-export const getDb = (event: D1Event) => {
-  const db = event.context?.cloudflare?.env?.DB
+export const getDb = (event: unknown) => {
+  const db = (event as { context?: { cloudflare?: { env?: { DB?: D1Database } } } }).context?.cloudflare?.env?.DB
   if (!db) {
     throw createError({ statusCode: 500, statusMessage: 'D1 binding DB is not available' })
   }
