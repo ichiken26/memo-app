@@ -233,6 +233,9 @@ a {
 }
 
 .memo-header {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
   max-width: 1066px;
   margin: 0 auto;
 }

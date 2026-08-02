@@ -71,6 +71,7 @@ const createAndSelectTag = async (
 
 .memo-header {
   display: flex;
+  min-height: 48px;
   gap: 16px;
   align-items: center;
   margin-bottom: 16px;
