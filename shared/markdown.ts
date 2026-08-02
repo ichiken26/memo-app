@@ -21,7 +21,16 @@ export const safeUrl = (value: string) => {
 
 const renderMarkdown = (source: string) => {
   const math: string[] = [];
-  const withPlaceholders = source.replace(
+  const redText: string[] = [];
+  const withRedPlaceholders = source.replace(
+    /==([^=\n]+)==\{red\}/g,
+    (_match, content: string) => {
+      const token = `MEMOREDTOKEN${redText.length}END`;
+      redText.push(`<span class="memo-red">${md.renderInline(content)}</span>`);
+      return token;
+    },
+  );
+  const withPlaceholders = withRedPlaceholders.replace(
     /\$\$([\s\S]+?)\$\$|\$([^\n$]+?)\$/g,
     (_match, display, inline) => {
       const expression = display ?? inline;
@@ -39,6 +48,9 @@ const renderMarkdown = (source: string) => {
   let html = md.render(withPlaceholders);
   math.forEach((value, index) => {
     html = html.replaceAll(`MEMOMATHTOKEN${index}END`, value);
+  });
+  redText.forEach((value, index) => {
+    html = html.replaceAll(`MEMOREDTOKEN${index}END`, value);
   });
   return html;
 };

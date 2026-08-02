@@ -47,6 +47,7 @@
   --tag-selected-bg-hover: #c9dcff;
   --tag-selected-border: #315da8;
   --tag-selected-text: #17345f;
+  --memo-red: #b91c1c;
 }
 
 .global-tools-target {
@@ -100,6 +101,7 @@
   --tag-selected-bg-hover: #35639f;
   --tag-selected-border: #a9c7ff;
   --tag-selected-text: #ffffff;
+  --memo-red: #ff8a80;
 }
 
 * {
@@ -133,7 +135,8 @@ a {
 }
 
 .memo-red {
-  color: #dc2626;
+  color: var(--memo-red);
+  font-weight: 700;
 }
 
 .page-shell {

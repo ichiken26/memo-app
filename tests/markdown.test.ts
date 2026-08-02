@@ -70,3 +70,19 @@ test("bold and italic formatting toggle instead of nesting", () => {
   assert.equal(toggleMarkdown("**word**", 2, 6, "**").value, "word");
   assert.equal(toggleMarkdown("*word*", 1, 5, "*").value, "word");
 });
+test("red text notation renders safely and supports inline Markdown", () => {
+  const content = (
+    parseMemo("==important **bold**=={red}")[0] as { content: string }
+  ).content;
+  assert.match(
+    content,
+    /<span class="memo-red">important <strong>bold<\/strong><\/span>/,
+  );
+  const unsafe = (
+    parseMemo("==<img src=x onerror=alert(1)>=={red}")[0] as {
+      content: string;
+    }
+  ).content;
+  assert.doesNotMatch(unsafe, /<img/);
+  assert.match(unsafe, /&lt;img/);
+});
