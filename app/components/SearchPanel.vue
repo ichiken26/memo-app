@@ -1,66 +1,69 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import type { MemoTag } from '~~/shared/memos'
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import type { MemoTag } from "~~/shared/memos";
 
 const props = defineProps<{
-  searchWord: string
-  selectedTagIds: string[]
-  histories: string[]
-  tags: MemoTag[]
-}>()
+  searchWord: string;
+  selectedTagIds: string[];
+  histories: string[];
+  tags: MemoTag[];
+}>();
 
 const emit = defineEmits<{
-  (event: 'update:searchWord', value: string): void
-  (event: 'update:selectedTagIds', value: string[]): void
-  (event: 'submit'): void
-  (event: 'applyHistory', value: string): void
-}>()
+  (event: "update:searchWord", value: string): void;
+  (event: "update:selectedTagIds", value: string[]): void;
+  (event: "submit"): void;
+  (event: "applyHistory", value: string): void;
+}>();
 
-const searchBox = ref<HTMLElement | null>(null)
-const isShowedHistory = ref(false)
+const searchBox = ref<HTMLElement | null>(null);
+const searchInput = ref<HTMLInputElement | null>(null);
+const isShowedHistory = ref(false);
 
 const searchWordModel = computed({
   get: () => props.searchWord,
-  set: (value: string) => emit('update:searchWord', value)
-})
+  set: (value: string) => emit("update:searchWord", value),
+});
 
 const selectedTagIdsModel = computed({
   get: () => props.selectedTagIds,
-  set: (value: string[]) => emit('update:selectedTagIds', value)
-})
+  set: (value: string[]) => emit("update:selectedTagIds", value),
+});
 
 const submit = () => {
-  isShowedHistory.value = false
-  emit('submit')
-}
+  isShowedHistory.value = false;
+  searchInput.value?.blur();
+  emit("submit");
+};
 
 const applyHistory = (word: string) => {
-  searchWordModel.value = word
-  isShowedHistory.value = false
-  emit('applyHistory', word)
-}
+  searchWordModel.value = word;
+  isShowedHistory.value = false;
+  emit("applyHistory", word);
+};
 
 const closeHistoryOnOutsideClick = (event: MouseEvent) => {
   if (!searchBox.value?.contains(event.target as Node)) {
-    isShowedHistory.value = false
+    isShowedHistory.value = false;
   }
-}
+};
 
 const closeHistoryOnEscape = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    isShowedHistory.value = false
+  if (event.key === "Escape") {
+    isShowedHistory.value = false;
+    searchInput.value?.blur();
   }
-}
+};
 
 onMounted(() => {
-  document.addEventListener('mousedown', closeHistoryOnOutsideClick)
-  document.addEventListener('keydown', closeHistoryOnEscape)
-})
+  document.addEventListener("mousedown", closeHistoryOnOutsideClick);
+  document.addEventListener("keydown", closeHistoryOnEscape);
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('mousedown', closeHistoryOnOutsideClick)
-  document.removeEventListener('keydown', closeHistoryOnEscape)
-})
+  document.removeEventListener("mousedown", closeHistoryOnOutsideClick);
+  document.removeEventListener("keydown", closeHistoryOnEscape);
+});
 </script>
 
 <template>
@@ -68,6 +71,7 @@ onBeforeUnmount(() => {
     <label class="field-label" for="search-word">検索ワード</label>
     <div ref="searchBox" class="search-box">
       <input
+        ref="searchInput"
         data-search-input
         id="search-word"
         v-model="searchWordModel"
@@ -76,9 +80,15 @@ onBeforeUnmount(() => {
         placeholder="タイトルまたは本文を検索"
         type="search"
         @focus="isShowedHistory = true"
-      >
+        @keydown.escape.prevent="closeHistoryOnEscape"
+      />
       <div v-if="isShowedHistory" class="history-popover">
-        <button v-for="history in histories" :key="history" type="button" @mousedown.prevent="applyHistory(history)">
+        <button
+          v-for="history in histories"
+          :key="history"
+          type="button"
+          @mousedown.prevent="applyHistory(history)"
+        >
           {{ history }}
         </button>
       </div>
@@ -87,7 +97,7 @@ onBeforeUnmount(() => {
     <fieldset class="tag-filter">
       <legend>タグ</legend>
       <label v-for="tag in tags" :key="tag.id" class="tag-option">
-        <input v-model="selectedTagIdsModel" type="checkbox" :value="tag.id">
+        <input v-model="selectedTagIdsModel" type="checkbox" :value="tag.id" />
         <span>{{ tag.name }}</span>
       </label>
     </fieldset>
@@ -115,7 +125,7 @@ legend {
   position: relative;
 }
 
-input[type='search'] {
+input[type="search"] {
   width: 100%;
   min-height: 48px;
   border: 1px solid #cfd3d8;
@@ -186,5 +196,4 @@ input[type='search'] {
   cursor: pointer;
   font-weight: 800;
 }
-
 </style>

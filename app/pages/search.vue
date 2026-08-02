@@ -1,65 +1,93 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { searchMemos, type Memo } from '~~/shared/memos'
+import { computed, ref } from "vue";
+import { searchMemos, type Memo } from "~~/shared/memos";
 
-const route = useRoute()
-const router = useRouter()
-const memoStore = useMemoStore()
-const { user } = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+const route = useRoute();
+const router = useRouter();
+const memoStore = useMemoStore();
+const { user } = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
-const userMemos = computed(() => (user.value ? memoStore.getMemosByOwner(user.value.uid) : []))
+const userMemos = computed(() =>
+  user.value ? memoStore.getMemosByOwner(user.value.uid) : [],
+);
 
-const histories = ref(['認証', 'タグ検索', 'Nuxt', 'API'])
-const searchWord = ref(String(route.query.search_word ?? ''))
+const histories = ref(["認証", "タグ検索", "Nuxt", "API"]);
+const searchWord = ref(String(route.query.q ?? route.query.search_word ?? ""));
 const selectedTagIds = ref<string[]>(
-  typeof route.query.tag === 'string'
+  typeof route.query.tag === "string"
     ? route.query.tag
-        .split(',')
-        .map((tagName) => memoStore.tags.value.find((tag) => tag.name === tagName)?.id)
+        .split(",")
+        .map(
+          (tagName) =>
+            memoStore.tags.value.find((tag) => tag.name === tagName)?.id,
+        )
         .filter((tagId): tagId is string => Boolean(tagId))
-    : []
-)
+    : [],
+);
 
-const selectedTags = computed(() => memoStore.tags.value.filter((tag) => selectedTagIds.value.includes(tag.id)))
-const memoPendingDelete = ref<Memo | null>(null)
-const results = computed(() =>
-  searchMemos({
-    searchWord: searchWord.value,
-    tags: selectedTags.value.map(({ id, name }) => ({ id, name })),
-    memos: userMemos.value,
-    ownerUid: user.value?.uid
-  })
-)
+const selectedTags = computed(() =>
+  memoStore.tags.value.filter((tag) => selectedTagIds.value.includes(tag.id)),
+);
+const memoPendingDelete = ref<Memo | null>(null);
+const directResults = ref<Memo[] | null>(null);
+const apiFetch = useApiFetch();
+const results = computed(
+  () =>
+    directResults.value ??
+    searchMemos({
+      searchWord: searchWord.value,
+      tags: selectedTags.value.map(({ id, name }) => ({ id, name })),
+      memos: userMemos.value,
+      ownerUid: user.value?.uid,
+    }),
+);
 
 const submitSearch = async () => {
-  const trimmedWord = searchWord.value.trim()
+  directResults.value = null;
+  const trimmedWord = searchWord.value.trim();
   if (trimmedWord && !histories.value.includes(trimmedWord)) {
-    histories.value = [trimmedWord, ...histories.value].slice(0, 5)
+    histories.value = [trimmedWord, ...histories.value].slice(0, 5);
   }
 
   await router.push({
-    path: '/search',
+    path: "/search",
     query: {
-      ...(selectedTags.value.length > 0 ? { tag: selectedTags.value.map((tag) => tag.name).join(',') } : {}),
-      ...(trimmedWord ? { search_word: trimmedWord } : {})
-    }
-  })
-}
+      ...(trimmedWord || selectedTags.value.length
+        ? {
+            q: [
+              ...trimmedWord.split(/\s+/).filter(Boolean),
+              ...selectedTags.value.map((tag) => tag.name),
+            ].join(" "),
+          }
+        : {}),
+    },
+  });
+};
+
+onMounted(async () => {
+  const q = String(route.query.q ?? "").trim();
+  if (q) {
+    const response = await apiFetch<{ results: Memo[] }>("/api/search", {
+      query: { q },
+    });
+    directResults.value = response.results;
+  }
+});
 
 const applyHistory = (word: string) => {
-  searchWord.value = word
-  submitSearch()
-}
+  searchWord.value = word;
+  submitSearch();
+};
 
 const confirmMemoDelete = async () => {
   if (!user.value || !memoPendingDelete.value) {
-    return
+    return;
   }
 
-  await memoStore.deleteMemo(memoPendingDelete.value.id, user.value.uid)
-  memoPendingDelete.value = null
-}
+  await memoStore.deleteMemo(memoPendingDelete.value.id);
+  memoPendingDelete.value = null;
+};
 </script>
 
 <template>
@@ -82,7 +110,11 @@ const confirmMemoDelete = async () => {
       @apply-history="applyHistory"
     />
 
-    <SearchResults class="result-area" :results="results" @delete="(memo) => memoPendingDelete = memo" />
+    <SearchResults
+      class="result-area"
+      :results="results"
+      @delete="(memo) => (memoPendingDelete = memo)"
+    />
 
     <ConfirmDeleteModal
       :open="Boolean(memoPendingDelete)"
@@ -99,7 +131,14 @@ const confirmMemoDelete = async () => {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   padding: 28px;
 }
 

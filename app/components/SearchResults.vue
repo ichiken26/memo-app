@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { Memo } from '~~/shared/memos'
+import type { Memo } from "~~/shared/memos";
 
 defineProps<{
-  results: Memo[]
-}>()
+  results: Memo[];
+}>();
 
 const emit = defineEmits<{
-  (event: 'delete', memo: Memo): void
-}>()
+  (event: "delete", memo: Memo): void;
+}>();
 </script>
 
 <template>
@@ -17,9 +17,15 @@ const emit = defineEmits<{
       <span>{{ results.length }}件</span>
     </div>
 
-    <div v-if="results.length === 0" class="empty">該当するメモは存在しません</div>
+    <div v-if="results.length === 0" class="empty">
+      該当するメモは存在しません
+    </div>
 
-    <MemoPreviewList v-else :memos="results" @delete="(memo) => emit('delete', memo)" />
+    <MemoPreviewList
+      v-else
+      :memos="results"
+      @delete="(memo) => emit('delete', memo)"
+    />
   </section>
 </template>
 
@@ -48,5 +54,4 @@ const emit = defineEmits<{
   color: var(--muted);
   text-align: center;
 }
-
 </style>
