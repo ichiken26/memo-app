@@ -160,6 +160,7 @@ onBeforeUnmount(() => {
         <p class="eyebrow">Tags</p>
         <h1>タグ一覧</h1>
       </div>
+      <div data-shortcut-help-target class="global-tools-target" />
       <NuxtLink class="back-link" to="/">メモ一覧</NuxtLink>
     </header>
 
@@ -461,10 +462,9 @@ h1 {
 }
 
 .tag-row {
-  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1fr) minmax(
-      260px,
-      1.1fr
-    ) auto;
+  grid-template-columns:
+    minmax(150px, 0.8fr) minmax(180px, 1fr) minmax(260px, 1.1fr)
+    auto;
   padding: 14px;
 }
 

@@ -40,6 +40,7 @@ const createAndSelectTag = async (
         <p class="eyebrow">Create</p>
         <h1>メモ作成</h1>
       </div>
+      <div data-shortcut-help-target class="global-tools-target" />
     </header>
 
     <MemoPreview

@@ -45,6 +45,12 @@
   --button-focus: rgba(49, 93, 168, 0.34);
 }
 
+.global-tools-target {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f141d;

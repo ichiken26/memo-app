@@ -98,6 +98,7 @@ const confirmMemoDelete = async () => {
         <p class="eyebrow">Search</p>
         <h1>メモ検索</h1>
       </div>
+      <div data-shortcut-help-target class="global-tools-target" />
     </header>
 
     <SearchPanel

@@ -4,5 +4,6 @@ useKeyboardShortcuts();
 </script>
 <template>
   <NuxtRouteAnnouncer />
+  <ShortcutHelp />
   <NuxtPage />
 </template>

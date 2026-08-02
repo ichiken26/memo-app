@@ -99,7 +99,7 @@ const confirmMemoDelete = async () => {
           </div>
         </div>
         <nav class="nav-actions" aria-label="主要ナビゲーション">
-          <ShortcutHelp />
+          <div data-shortcut-help-target class="global-tools-target" />
           <NuxtLink class="button-link primary-link memo-link" to="/memo/new">
             新規メモ
           </NuxtLink>

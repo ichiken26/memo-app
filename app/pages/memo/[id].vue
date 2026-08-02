@@ -156,6 +156,7 @@ onBeforeRouteLeave(() => {
   <main class="memo-shell">
     <header class="memo-header">
       <TopLogoLink />
+      <div data-shortcut-help-target class="global-tools-target" />
     </header>
 
     <section v-if="memo" class="memo-detail">

@@ -36,6 +36,7 @@ const confirmMemoDelete = async () => {
         <p class="eyebrow">Tag</p>
         <h1>{{ tag?.name ?? "タグが見つかりません" }}</h1>
       </div>
+      <div data-shortcut-help-target class="global-tools-target" />
     </header>
 
     <MemoPreviewList
