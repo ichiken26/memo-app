@@ -14,6 +14,7 @@ const emit = defineEmits<{
 
 const isOpen = ref(false);
 const newTagName = ref("");
+const addButton = ref<HTMLButtonElement | null>(null);
 
 const selectedIds = computed(() => props.modelValue.map((tag) => tag.id));
 
@@ -51,10 +52,17 @@ const createTag = async () => {
   isOpen.value = true;
   await nextTick();
 };
+
+const closePicker = async () => {
+  if (!isOpen.value) return;
+  isOpen.value = false;
+  await nextTick();
+  addButton.value?.focus();
+};
 </script>
 
 <template>
-  <section class="tag-picker">
+  <section class="tag-picker" @keydown.escape.stop.prevent="closePicker">
     <div class="selected-row">
       <TagChip
         v-for="tag in modelValue"
@@ -65,6 +73,7 @@ const createTag = async () => {
         @remove="removeTag"
       />
       <button
+        ref="addButton"
         class="add-button"
         type="button"
         :aria-expanded="isOpen"
