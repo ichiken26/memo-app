@@ -79,10 +79,13 @@ const createAndSelectTag = async (
 .memo-header {
   flex: 0 0 auto;
   display: flex;
+  max-width: none;
   min-height: 48px;
   gap: 16px;
   align-items: center;
   margin-bottom: 16px;
+  margin-right: 0;
+  margin-left: 0;
 }
 
 .eyebrow {

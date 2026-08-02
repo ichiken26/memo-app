@@ -2,6 +2,7 @@
 const route = useRoute();
 const target = shallowRef<HTMLElement | null>(null);
 const isFloating = ref(true);
+let targetObserver: MutationObserver | null = null;
 const shortcuts = computed(() => [
   "Ctrl+Alt+S: 検索",
   "Ctrl+/: トップ",
@@ -24,8 +25,16 @@ const updateTarget = async () => {
   isFloating.value = !pageTarget;
 };
 
-onMounted(updateTarget);
+onMounted(() => {
+  void updateTarget();
+  targetObserver = new MutationObserver(() => void updateTarget());
+  targetObserver.observe(document.getElementById("__nuxt") ?? document.body, {
+    childList: true,
+    subtree: true,
+  });
+});
 watch(() => route.fullPath, updateTarget, { flush: "post" });
+onBeforeUnmount(() => targetObserver?.disconnect());
 </script>
 <template>
   <Teleport v-if="target" :to="target">

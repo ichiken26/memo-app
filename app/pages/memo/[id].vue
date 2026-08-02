@@ -240,10 +240,10 @@ a {
 .memo-header {
   flex: 0 0 auto;
   display: flex;
+  width: 100%;
   min-height: 48px;
   align-items: center;
-  max-width: 1066px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .missing {
