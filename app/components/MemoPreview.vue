@@ -164,7 +164,7 @@ const blocks = computed(() => parseMemo(body.value)),
   width: 18px;
   height: 18px;
   margin: 0 9px 0 0;
-  border: 2px solid #000000;
+  border: 1.5px solid #c5cad3;
   border-radius: 3px;
   background-color: #ffffff;
   vertical-align: -3px;
@@ -172,11 +172,12 @@ const blocks = computed(() => parseMemo(body.value)),
 }
 
 .html :deep(.task-list-item-checkbox:checked) {
-  background-color: #ffffff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='m3 8 3 3 7-7'/%3E%3C/svg%3E");
+  border-color: #4b6cb7;
+  background-color: #4b6cb7;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2' d='m3.5 8.2 3 3 6-6.5'/%3E%3C/svg%3E");
   background-position: center;
   background-repeat: no-repeat;
-  background-size: 14px 14px;
+  background-size: 17px 17px;
 }
 .split {
   display: grid;
