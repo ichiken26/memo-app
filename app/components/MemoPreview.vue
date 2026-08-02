@@ -1,0 +1,150 @@
+<script setup lang="ts">
+import { findMediaSpacingWarnings, parseMemo } from '~~/shared/markdown'
+import type { Memo, MemoTag } from '~~/shared/memos'
+const props = defineProps<{
+  memo?: Memo | null
+  availableTags: MemoTag[]
+  editorMode: 'create' | 'edit'
+  saveStatus?: string
+  viewMode?: 'edit' | 'preview'
+  ownerUid?: string
+}>()
+const emit = defineEmits<{
+  (e: 'save', v: { title: string; body: string; tags: MemoTag[] }): void
+  (e: 'change', v: { title: string; body: string; tags: MemoTag[] }): void
+  (e: 'delete'): void
+  (e: 'createTag', name: string, select: (tag: MemoTag) => void): void
+}>()
+const title = ref(props.memo?.title || ''),
+  body = ref(props.memo?.body || ''),
+  tags = ref<MemoTag[]>(props.memo?.tags.map((t) => ({ ...t })) || [])
+watch(
+  () => props.memo?.id,
+  () => {
+    title.value = props.memo?.title || ''
+    body.value = props.memo?.body || ''
+    tags.value = props.memo?.tags.map((t) => ({ ...t })) || []
+  },
+)
+const value = computed(() => ({
+  title: title.value,
+  body: body.value,
+  tags: tags.value,
+}))
+watch(value, (v) => emit('change', v), { deep: true })
+const blocks = computed(() => parseMemo(body.value)),
+  warnings = computed(() => findMediaSpacingWarnings(body.value))
+</script>
+<template>
+  <section class="memo-workspace">
+    <MemoEditorHeader
+      v-model:title="title"
+      v-model:tags="tags"
+      :available-tags="availableTags"
+      :mode="editorMode"
+      :save-status="saveStatus"
+      @save="emit('save', value)"
+      @delete="emit('delete')"
+      @create-tag="(n, s) => emit('createTag', n, s)"
+    />
+    <div v-if="warnings.length" class="warning">
+      <AppTooltip icon="!" label="！前行と後行を空白行にしてください">
+        ！前行と後行を空白行にしてください（{{ warnings.join(', ') }}行）
+      </AppTooltip>
+      <span>メディア記法の前後に空白行が必要です</span>
+    </div>
+    <div class="split" :class="{ previewOnly: viewMode === 'preview' }">
+      <MemoEditor
+        v-if="viewMode !== 'preview'"
+        v-model="body"
+        :owner-uid="ownerUid"
+        @save="emit('save', value)"
+      />
+      <article class="preview" aria-label="メモプレビュー">
+        <template v-if="blocks.length">
+          <template v-for="(block, i) in blocks" :key="i">
+            <div
+              v-if="block.type === 'html'"
+              class="html"
+              v-html="block.content"
+            />
+            <img
+              v-else-if="block.type === 'image'"
+              class="memo-image"
+              :src="block.url"
+              :alt="block.alt"
+              loading="lazy"
+            />
+            <HyperLink v-else :title="block.title" :url="block.url" />
+          </template>
+        </template>
+        <p v-else class="empty">プレビューがここに表示されます。</p>
+      </article>
+    </div>
+  </section>
+</template>
+<style scoped>
+.memo-workspace {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.split.previewOnly {
+  grid-template-columns: 1fr;
+}
+.preview {
+  min-width: 0;
+  min-height: 480px;
+  padding: 22px;
+  border-left: 1px solid var(--border);
+  line-height: 1.8;
+}
+.previewOnly .preview {
+  border-left: 0;
+}
+.html:deep(p) {
+  margin: 0 0 1em;
+}
+.html:deep(a) {
+  color: var(--primary);
+}
+.html:deep(code) {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: var(--panel-soft);
+}
+.memo-image {
+  display: block;
+  max-width: 100%;
+  max-height: 70vh;
+  margin: 18px auto;
+  border-radius: 10px;
+}
+.empty {
+  color: var(--muted);
+}
+.warning {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 18px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13px;
+}
+@media (max-width: 850px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+  .preview {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
+</style>

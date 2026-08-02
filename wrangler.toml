@@ -1,4 +1,5 @@
 name = "memo-app-nuxt-training"
+routes = [{ pattern = "memo.kokage-studio.com", custom_domain = true }]
 compatibility_date = "2026-05-17"
 main = ".output/server/index.mjs"
 compatibility_flags = ["nodejs_compat", "no_nodejs_compat_v2"]
@@ -25,3 +26,7 @@ binding = "DB"
 database_name = "memo-db"
 database_id = "d98d1c07-1cbc-48fe-bddf-585a86275cc2"
 remote = true
+
+[[r2_buckets]]
+binding = "MEMO_IMAGES"
+bucket_name = "memo-images"

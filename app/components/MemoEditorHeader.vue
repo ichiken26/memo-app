@@ -1,0 +1,103 @@
+<script setup lang="ts">
+import type { MemoTag } from '~~/shared/memos'
+defineProps<{
+  title: string
+  tags: MemoTag[]
+  availableTags: MemoTag[]
+  mode: 'create' | 'edit'
+  saveStatus?: string
+}>()
+const emit = defineEmits<{
+  (e: 'update:title', v: string): void
+  (e: 'update:tags', v: MemoTag[]): void
+  (e: 'save'): void
+  (e: 'delete'): void
+  (e: 'createTag', name: string, select: (tag: MemoTag) => void): void
+}>()
+</script>
+<template>
+  <header class="editor-header">
+    <input
+      class="title-input"
+      :value="title"
+      placeholder="タイトル"
+      aria-label="メモタイトル"
+      @input="emit('update:title', ($event.target as HTMLInputElement).value)"
+      @keydown.ctrl.enter.prevent="emit('save')"
+    />
+    <TagPicker
+      :model-value="tags"
+      :available-tags="availableTags"
+      @update:model-value="emit('update:tags', $event)"
+      @create-tag="(name, select) => emit('createTag', name, select)"
+    />
+    <div class="status">
+      {{ mode === 'edit' ? saveStatus : '作成時に保存されます' }}
+    </div>
+    <div class="actions">
+      <button class="save" type="button" @click="emit('save')">保存</button>
+      <button
+        v-if="mode === 'edit'"
+        class="delete"
+        type="button"
+        @click="emit('delete')"
+      >
+        削除
+      </button>
+    </div>
+  </header>
+</template>
+<style scoped>
+.editor-header {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, auto) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.title-input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  font-size: clamp(24px, 3vw, 38px);
+  font-weight: 800;
+}
+.status {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.actions button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  padding: 0 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.save {
+  background: var(--primary);
+}
+.delete {
+  background: var(--danger);
+}
+@media (max-width: 850px) {
+  .editor-header {
+    grid-template-columns: 1fr;
+  }
+  .actions button {
+    flex: 1;
+  }
+  .actions {
+    display: flex;
+  }
+}
+</style>

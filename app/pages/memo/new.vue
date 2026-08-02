@@ -11,11 +11,11 @@ const createMemo = async (value: { title: string; body: string; tags: MemoTag[] 
     return
   }
 
-  await memoStore.createMemo({
+  const memo = await memoStore.createMemo({
     ...value,
     ownerUid: user.value.uid
   })
-  router.push('/')
+  await router.push(`/memo/${encodeURIComponent(memo.id)}?mode=edit`)
 }
 
 const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => void) => {
@@ -38,9 +38,11 @@ const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => voi
       </div>
     </header>
 
-    <MemoEditor
+    <MemoPreview
       class="memo-editor"
-      mode="create"
+      editor-mode="create"
+      view-mode="edit"
+      :owner-uid="user?.uid"
       :available-tags="memoStore.tags.value"
       @save="createMemo"
       @create-tag="createAndSelectTag"
@@ -51,9 +53,8 @@ const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => voi
 <style scoped>
 .new-memo-shell {
   min-height: 100vh;
-  background: #f7f7f4;
-  color: #1f2933;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
   padding: 28px;
 }
 
@@ -73,7 +74,7 @@ const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => voi
 
 .eyebrow {
   margin: 0 0 4px;
-  color: #52616b;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;
