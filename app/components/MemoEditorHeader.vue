@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import type { MemoTag } from '~~/shared/memos'
+import type { MemoTag } from "~~/shared/memos";
 defineProps<{
-  title: string
-  tags: MemoTag[]
-  availableTags: MemoTag[]
-  mode: 'create' | 'edit'
-  saveStatus?: string
-}>()
+  title: string;
+  tags: MemoTag[];
+  availableTags: MemoTag[];
+  mode: "create" | "edit";
+  saveStatus?: string;
+}>();
 const emit = defineEmits<{
-  (e: 'update:title', v: string): void
-  (e: 'update:tags', v: MemoTag[]): void
-  (e: 'save'): void
-  (e: 'delete'): void
-  (e: 'createTag', name: string, select: (tag: MemoTag) => void): void
-}>()
+  (e: "update:title", v: string): void;
+  (e: "update:tags", v: MemoTag[]): void;
+  (e: "save"): void;
+  (e: "delete"): void;
+  (e: "createTag", name: string, select: (tag: MemoTag) => void): void;
+}>();
 </script>
 <template>
   <header class="editor-header">
@@ -32,7 +32,7 @@ const emit = defineEmits<{
       @create-tag="(name, select) => emit('createTag', name, select)"
     />
     <div class="status">
-      {{ mode === 'edit' ? saveStatus : '作成時に保存されます' }}
+      {{ mode === "edit" ? saveStatus : "作成時に保存されます" }}
     </div>
     <div class="actions">
       <button class="save" type="button" @click="emit('save')">保存</button>

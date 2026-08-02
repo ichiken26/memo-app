@@ -1,39 +1,38 @@
 <script setup lang="ts">
-import { findMediaSpacingWarnings, parseMemo } from '~~/shared/markdown'
-import type { Memo, MemoTag } from '~~/shared/memos'
+import { findMediaSpacingWarnings, parseMemo } from "~~/shared/markdown";
+import type { Memo, MemoTag } from "~~/shared/memos";
 const props = defineProps<{
-  memo?: Memo | null
-  availableTags: MemoTag[]
-  editorMode: 'create' | 'edit'
-  saveStatus?: string
-  viewMode?: 'edit' | 'preview'
-  ownerUid?: string
-}>()
+  memo?: Memo | null;
+  availableTags: MemoTag[];
+  editorMode: "create" | "edit";
+  saveStatus?: string;
+  viewMode?: "edit" | "preview";
+}>();
 const emit = defineEmits<{
-  (e: 'save', v: { title: string; body: string; tags: MemoTag[] }): void
-  (e: 'change', v: { title: string; body: string; tags: MemoTag[] }): void
-  (e: 'delete'): void
-  (e: 'createTag', name: string, select: (tag: MemoTag) => void): void
-}>()
-const title = ref(props.memo?.title || ''),
-  body = ref(props.memo?.body || ''),
-  tags = ref<MemoTag[]>(props.memo?.tags.map((t) => ({ ...t })) || [])
+  (e: "save", v: { title: string; body: string; tags: MemoTag[] }): void;
+  (e: "change", v: { title: string; body: string; tags: MemoTag[] }): void;
+  (e: "delete"): void;
+  (e: "createTag", name: string, select: (tag: MemoTag) => void): void;
+}>();
+const title = ref(props.memo?.title || ""),
+  body = ref(props.memo?.body || ""),
+  tags = ref<MemoTag[]>(props.memo?.tags.map((t) => ({ ...t })) || []);
 watch(
   () => props.memo?.id,
   () => {
-    title.value = props.memo?.title || ''
-    body.value = props.memo?.body || ''
-    tags.value = props.memo?.tags.map((t) => ({ ...t })) || []
+    title.value = props.memo?.title || "";
+    body.value = props.memo?.body || "";
+    tags.value = props.memo?.tags.map((t) => ({ ...t })) || [];
   },
-)
+);
 const value = computed(() => ({
   title: title.value,
   body: body.value,
   tags: tags.value,
-}))
-watch(value, (v) => emit('change', v), { deep: true })
+}));
+watch(value, (v) => emit("change", v), { deep: true });
 const blocks = computed(() => parseMemo(body.value)),
-  warnings = computed(() => findMediaSpacingWarnings(body.value))
+  warnings = computed(() => findMediaSpacingWarnings(body.value));
 </script>
 <template>
   <section class="memo-workspace">
@@ -49,7 +48,7 @@ const blocks = computed(() => parseMemo(body.value)),
     />
     <div v-if="warnings.length" class="warning">
       <AppTooltip icon="!" label="！前行と後行を空白行にしてください">
-        ！前行と後行を空白行にしてください（{{ warnings.join(', ') }}行）
+        ！前行と後行を空白行にしてください（{{ warnings.join(", ") }}行）
       </AppTooltip>
       <span>メディア記法の前後に空白行が必要です</span>
     </div>
@@ -57,7 +56,6 @@ const blocks = computed(() => parseMemo(body.value)),
       <MemoEditor
         v-if="viewMode !== 'preview'"
         v-model="body"
-        :owner-uid="ownerUid"
         @save="emit('save', value)"
       />
       <article class="preview" aria-label="メモプレビュー">
@@ -75,6 +73,12 @@ const blocks = computed(() => parseMemo(body.value)),
               :alt="block.alt"
               loading="lazy"
             />
+            <ClientOnly v-else-if="block.type === 'mermaid'">
+              <MermaidDiagram :source="block.content" />
+              <template #fallback>
+                <pre>{{ block.content }}</pre>
+              </template>
+            </ClientOnly>
             <HyperLink v-else :title="block.title" :url="block.url" />
           </template>
         </template>
@@ -91,6 +95,22 @@ const blocks = computed(() => parseMemo(body.value)),
   background: var(--panel);
   box-shadow: var(--shadow);
 }
+
+.html :deep(strong) {
+  color: var(--text);
+  font-weight: 900;
+}
+
+.html :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.html :deep(th),
+.html :deep(td) {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+}
 .split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -100,7 +120,7 @@ const blocks = computed(() => parseMemo(body.value)),
 }
 .preview {
   min-width: 0;
-  min-height: 480px;
+  min-height: calc(100vh - 230px);
   padding: 22px;
   border-left: 1px solid var(--border);
   line-height: 1.8;

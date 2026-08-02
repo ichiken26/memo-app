@@ -1,31 +1,35 @@
 <script setup lang="ts">
-import type { MemoTag } from '~~/shared/memos'
+import type { MemoTag } from "~~/shared/memos";
 
-const router = useRouter()
-const memoStore = useMemoStore()
-const { user } = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+const router = useRouter();
+const memoStore = useMemoStore();
+const { user } = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
-const createMemo = async (value: { title: string; body: string; tags: MemoTag[] }) => {
+const createMemo = async (value: {
+  title: string;
+  body: string;
+  tags: MemoTag[];
+}) => {
   if (!user.value) {
-    return
+    return;
   }
 
-  const memo = await memoStore.createMemo({
-    ...value,
-    ownerUid: user.value.uid
-  })
-  await router.push(`/memo/${encodeURIComponent(memo.id)}?mode=edit`)
-}
+  const memo = await memoStore.createMemo(value);
+  await router.push(`/memo/${encodeURIComponent(memo.id)}?mode=edit`);
+};
 
-const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => void) => {
+const createAndSelectTag = async (
+  name: string,
+  selectTag: (tag: MemoTag) => void,
+) => {
   if (user.value) {
-    const tag = await memoStore.createTag(user.value.uid, name)
+    const tag = await memoStore.createTag(name);
     if (tag) {
-      selectTag(tag)
+      selectTag(tag);
     }
   }
-}
+};
 </script>
 
 <template>
@@ -42,7 +46,6 @@ const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => voi
       class="memo-editor"
       editor-mode="create"
       view-mode="edit"
-      :owner-uid="user?.uid"
       :available-tags="memoStore.tags.value"
       @save="createMemo"
       @create-tag="createAndSelectTag"
@@ -60,7 +63,7 @@ const createAndSelectTag = async (name: string, selectTag: (tag: MemoTag) => voi
 
 .memo-header,
 .memo-editor {
-  max-width: 820px;
+  max-width: 1066px;
   margin-right: auto;
   margin-left: auto;
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { theme, toggleTheme } = useTheme()
+const { theme, toggleTheme } = useTheme();
 </script>
 <template>
   <button
@@ -8,7 +8,7 @@ const { theme, toggleTheme } = useTheme()
     :aria-label="`${theme === 'dark' ? 'ライト' : 'ダーク'}モードに切り替え`"
     @click="toggleTheme"
   >
-    {{ theme === 'dark' ? '☀' : '☾' }}
+    {{ theme === "dark" ? "☀" : "☾" }}
   </button>
 </template>
 <style scoped>

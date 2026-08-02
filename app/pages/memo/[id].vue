@@ -1,144 +1,136 @@
 <script setup lang="ts">
-import type { MemoTag } from '~~/shared/memos'
+import type { MemoTag } from "~~/shared/memos";
 
-const route = useRoute()
-const router = useRouter()
-const memoStore = useMemoStore()
-const { user } = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+const route = useRoute();
+const router = useRouter();
+const memoStore = useMemoStore();
+const { user } = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
-const memoId = computed(() => String(route.params.id))
+const memoId = computed(() => String(route.params.id));
 const memo = computed(() =>
   user.value ? memoStore.findMemoForOwner(memoId.value, user.value.uid) : null,
-)
-const saveStatus = ref('保存済み')
-const hasUnsavedChanges = ref(false)
-const isSaving = ref(false)
-const isDeleteModalOpen = ref(false)
-const viewMode = computed<'edit' | 'preview'>(() =>
-  route.query.mode === 'preview' ? 'preview' : 'edit',
-)
-const setMode = async (mode: 'edit' | 'preview') => {
-  if (import.meta.client) localStorage.setItem('memo-view-mode', mode)
-  await router.replace({ query: { ...route.query, mode } })
-}
-let saveTimer: ReturnType<typeof setTimeout> | null = null
+);
+const saveStatus = ref("保存済み");
+const hasUnsavedChanges = ref(false);
+const isSaving = ref(false);
+const { viewMode, setMode } = useMemoViewMode();
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let changeVersion = 0;
 
-const saveMemo = async (value: {
-  title: string
-  body: string
-  tags: MemoTag[]
-}) => {
+const saveMemo = async (
+  value: { title: string; body: string; tags: MemoTag[] },
+  version = changeVersion,
+) => {
   if (saveTimer) {
-    clearTimeout(saveTimer)
-    saveTimer = null
+    clearTimeout(saveTimer);
+    saveTimer = null;
   }
-  isSaving.value = true
-  saveStatus.value = '保存中...'
-  if (user.value) {
-    await memoStore.updateMemo(memoId.value, {
-      ...value,
-      ownerUid: user.value.uid,
-    })
+  isSaving.value = true;
+  saveStatus.value = "保存中...";
+  try {
+    if (user.value) {
+      await memoStore.updateMemo(memoId.value, value);
+    }
+    if (version !== changeVersion) {
+      return;
+    }
+    hasUnsavedChanges.value = false;
+    saveStatus.value = "保存済み";
+  } catch (error) {
+    hasUnsavedChanges.value = true;
+    saveStatus.value =
+      error instanceof Error
+        ? `保存失敗: ${error.message}`
+        : "保存に失敗しました";
+  } finally {
+    isSaving.value = false;
   }
-  hasUnsavedChanges.value = false
-  isSaving.value = false
-  saveStatus.value = '保存済み'
-}
+};
 
 const queueAutoSave = (value: {
-  title: string
-  body: string
-  tags: MemoTag[]
+  title: string;
+  body: string;
+  tags: MemoTag[];
 }) => {
   if (!memo.value) {
-    return
+    return;
   }
 
-  hasUnsavedChanges.value = true
-  saveStatus.value = '未保存の変更あり'
+  hasUnsavedChanges.value = true;
+  changeVersion += 1;
+  const version = changeVersion;
+  saveStatus.value = "未保存の変更あり";
   if (saveTimer) {
-    clearTimeout(saveTimer)
+    clearTimeout(saveTimer);
   }
-  saveTimer = setTimeout(() => saveMemo(value), 1000)
-}
+  saveTimer = setTimeout(() => saveMemo(value, version), 1000);
+};
 
 const createAndSelectTag = async (
   name: string,
   selectTag: (tag: MemoTag) => void,
 ) => {
   if (user.value) {
-    const tag = await memoStore.createTag(user.value.uid, name)
+    const tag = await memoStore.createTag(name);
     if (tag) {
-      selectTag(tag)
+      selectTag(tag);
     }
   }
-}
+};
 
 const deleteCurrentMemo = async () => {
   if (!user.value || !memo.value) {
-    return
+    return;
+  }
+  if (
+    !window.confirm(
+      `「${memo.value.title}」を削除します。この操作は元に戻せません。`,
+    )
+  ) {
+    return;
   }
 
   if (saveTimer) {
-    clearTimeout(saveTimer)
-    saveTimer = null
+    clearTimeout(saveTimer);
+    saveTimer = null;
   }
 
-  hasUnsavedChanges.value = false
-  isSaving.value = false
-  await memoStore.deleteMemo(memo.value.id, user.value.uid)
-  isDeleteModalOpen.value = false
-  await router.push('/')
-}
+  hasUnsavedChanges.value = false;
+  isSaving.value = false;
+  await memoStore.deleteMemo(memo.value.id);
+  await router.push("/");
+};
 
 const warnBeforeUnload = (event: BeforeUnloadEvent) => {
   if (!hasUnsavedChanges.value && !isSaving.value) {
-    return
+    return;
   }
 
-  event.preventDefault()
-  event.returnValue = ''
-}
+  event.preventDefault();
+  event.returnValue = "";
+};
 
 onMounted(() => {
-  window.addEventListener('beforeunload', warnBeforeUnload)
-  if (!route.query.mode)
-    setMode(
-      localStorage.getItem('memo-view-mode') === 'preview' ? 'preview' : 'edit',
-    )
-  window.addEventListener('keydown', modeShortcut)
-})
-
-const modeShortcut = (event: KeyboardEvent) => {
-  if (!event.ctrlKey || !event.altKey) return
-  if (event.key.toLowerCase() === 'e') {
-    event.preventDefault()
-    setMode('edit')
-  }
-  if (event.key.toLowerCase() === 'p') {
-    event.preventDefault()
-    setMode('preview')
-  }
-}
+  window.addEventListener("beforeunload", warnBeforeUnload);
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', warnBeforeUnload)
-  window.removeEventListener('keydown', modeShortcut)
+  window.removeEventListener("beforeunload", warnBeforeUnload);
   if (saveTimer) {
-    clearTimeout(saveTimer)
+    clearTimeout(saveTimer);
   }
-})
+});
 
 onBeforeRouteLeave(() => {
   if (!hasUnsavedChanges.value && !isSaving.value) {
-    return true
+    return true;
   }
 
   return window.confirm(
-    '保存が完了していない変更があります。ページを離れますか？',
-  )
-})
+    "保存が完了していない変更があります。ページを離れますか？",
+  );
+});
 </script>
 
 <template>
@@ -152,11 +144,11 @@ onBeforeRouteLeave(() => {
         <span>更新日: {{ memo.updatedAt }}</span>
         <div>
           <button
-            class="ghost-button"
+            class="mode-text"
             type="button"
             @click="setMode(viewMode === 'edit' ? 'preview' : 'edit')"
           >
-            {{ viewMode === 'edit' ? '閲覧モード' : '編集モード' }}
+            {{ viewMode === "edit" ? "編集モード" : "閲覧モード" }}
           </button>
           <button
             class="ghost-button"
@@ -171,22 +163,13 @@ onBeforeRouteLeave(() => {
         :key="memo.id"
         editor-mode="edit"
         :view-mode="viewMode"
-        :owner-uid="user?.uid"
         :memo="memo"
         :available-tags="memoStore.tags.value"
         :save-status="saveStatus"
         @change="queueAutoSave"
         @save="saveMemo"
-        @delete="isDeleteModalOpen = true"
+        @delete="deleteCurrentMemo"
         @create-tag="createAndSelectTag"
-      />
-
-      <ConfirmDeleteModal
-        :open="isDeleteModalOpen"
-        title="メモを削除"
-        :message="`「${memo.title}」を削除します。この操作は元に戻せません。`"
-        @cancel="isDeleteModalOpen = false"
-        @confirm="deleteCurrentMemo"
       />
     </section>
 
@@ -211,7 +194,7 @@ a {
 }
 
 .memo-header {
-  max-width: 820px;
+  max-width: 1066px;
   margin: 0 auto;
 }
 
@@ -225,7 +208,7 @@ a {
 }
 
 .memo-detail {
-  max-width: 820px;
+  max-width: 1066px;
   margin: 16px auto 0;
 }
 
@@ -249,5 +232,14 @@ a {
   cursor: pointer;
   font-weight: 800;
   padding: 0 12px;
+}
+
+.mode-text {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
 }
 </style>

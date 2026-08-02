@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import type { Memo } from '~~/shared/memos'
+import type { Memo } from "~~/shared/memos";
 
-const router = useRouter()
+const router = useRouter();
 
 defineProps<{
-  memos: Memo[]
-}>()
+  memos: Memo[];
+}>();
 
 const emit = defineEmits<{
-  (event: 'delete', memo: Memo): void
-}>()
+  (event: "delete", memo: Memo): void;
+}>();
 
-const buildMemoDetailPath = (memo: Memo) => `/memo/${memo.id}`
+const buildMemoDetailPath = (memo: Memo) => `/memo/${memo.id}`;
 
 const openMemoDetail = async (memo: Memo) => {
-  await router.push(buildMemoDetailPath(memo))
-}
+  await router.push(buildMemoDetailPath(memo));
+};
 
 const deleteMemo = (memo: Memo) => {
-  emit('delete', memo)
-}
+  emit("delete", memo);
+};
 </script>
 
 <template>
@@ -39,11 +39,7 @@ const deleteMemo = (memo: Memo) => {
       <h3 class="memo-title">{{ memo.title }}</h3>
       <p>{{ memo.body }}</p>
       <div class="tag-row">
-        <TagChip
-          v-for="tag in memo.tags"
-          :key="tag.id"
-          :tag="tag"
-        />
+        <TagChip v-for="tag in memo.tags" :key="tag.id" :tag="tag" />
       </div>
       <button
         class="delete-button"
@@ -148,7 +144,11 @@ const deleteMemo = (memo: Memo) => {
   color: rgba(82, 97, 107, 0.42);
   cursor: pointer;
   opacity: 0.65;
-  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, opacity 0.16s ease;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    opacity 0.16s ease;
 }
 
 .memo-preview-card:hover .delete-button,
@@ -165,5 +165,4 @@ const deleteMemo = (memo: Memo) => {
   background: #dc2626;
   color: var(--panel);
 }
-
 </style>

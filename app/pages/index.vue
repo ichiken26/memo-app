@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { UNTAGGED_TAG, groupMemoListByTag, type Memo } from '~~/shared/memos'
+import { UNTAGGED_TAG, groupMemoListByTag, type Memo } from "~~/shared/memos";
 
-const memoStore = useMemoStore()
+const memoStore = useMemoStore();
 const {
   user,
   isAuthenticated,
@@ -11,50 +11,49 @@ const {
   authError,
   signInWithGoogle,
   signOut,
-} = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+} = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
 const userMemos = computed(() =>
   user.value ? memoStore.getMemosByOwner(user.value.uid) : [],
-)
+);
 const tagGroups = computed(() =>
   groupMemoListByTag(userMemos.value, memoStore.tags.value),
-)
-const memoPendingDelete = ref<Memo | null>(null)
-const isCreatingStarter = ref(false)
+);
+const memoPendingDelete = ref<Memo | null>(null);
+const isCreatingStarter = ref(false);
 
 const retryLoad = async () => {
   if (user.value) {
-    await memoStore.loadForOwner(user.value.uid, { force: true })
+    await memoStore.loadForOwner(user.value.uid, { force: true });
   }
-}
+};
 
 const createStarterMemo = async () => {
   if (!user.value || isCreatingStarter.value) {
-    return
+    return;
   }
 
-  isCreatingStarter.value = true
+  isCreatingStarter.value = true;
   try {
     await memoStore.createMemo({
-      ownerUid: user.value.uid,
-      title: 'はじめてのメモ',
-      body: '# メモへようこそ\n\nこのメモはあなたのGoogleアカウント専用です。\n\n- Markdownで記述できます\n- Ctrl+Enterで保存できます\n- 右クリックから画像やリンクを挿入できます',
+      title: "はじめてのメモ",
+      body: "# メモへようこそ\n\nこのメモはあなたのGoogleアカウント専用です。\n\n- Markdownで記述できます\n- Ctrl+Enterで保存できます\n- 右クリックから画像やリンクを挿入できます",
       tags: [],
-    })
+    });
   } finally {
-    isCreatingStarter.value = false
+    isCreatingStarter.value = false;
   }
-}
+};
 
 const confirmMemoDelete = async () => {
   if (!user.value || !memoPendingDelete.value) {
-    return
+    return;
   }
 
-  await memoStore.deleteMemo(memoPendingDelete.value.id, user.value.uid)
-  memoPendingDelete.value = null
-}
+  await memoStore.deleteMemo(memoPendingDelete.value.id);
+  memoPendingDelete.value = null;
+};
 </script>
 
 <template>
@@ -76,10 +75,10 @@ const confirmMemoDelete = async () => {
           <span class="google-mark">G</span>
           {{
             !isConfigured
-              ? 'Firebase設定が必要です'
+              ? "Firebase設定が必要です"
               : isReady
-                ? 'Google でログイン'
-                : '認証状態を確認中'
+                ? "Google でログイン"
+                : "認証状態を確認中"
           }}
         </button>
         <p v-if="!isConfigured" class="auth-error">
@@ -100,6 +99,7 @@ const confirmMemoDelete = async () => {
           </div>
         </div>
         <nav class="nav-actions" aria-label="主要ナビゲーション">
+          <ShortcutHelp />
           <NuxtLink class="button-link primary-link memo-link" to="/memo/new">
             新規メモ
           </NuxtLink>
@@ -162,7 +162,7 @@ const confirmMemoDelete = async () => {
           :disabled="isCreatingStarter"
           @click="createStarterMemo"
         >
-          {{ isCreatingStarter ? '作成中…' : 'サンプルメモを作成' }}
+          {{ isCreatingStarter ? "作成中…" : "サンプルメモを作成" }}
         </button>
       </section>
 
@@ -230,7 +230,7 @@ const confirmMemoDelete = async () => {
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
-    'Segoe UI',
+    "Segoe UI",
     sans-serif;
 }
 

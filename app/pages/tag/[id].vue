@@ -1,29 +1,31 @@
 <script setup lang="ts">
-import type { Memo } from '~~/shared/memos'
+import type { Memo } from "~~/shared/memos";
 
-const route = useRoute()
-const memoStore = useMemoStore()
-const { user } = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+const route = useRoute();
+const memoStore = useMemoStore();
+const { user } = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
-const tag = computed(() => memoStore.findTag(String(route.params.id)))
+const tag = computed(() => memoStore.findTag(String(route.params.id)));
 const filteredMemos = computed(() =>
   tag.value && user.value
     ? memoStore
         .getMemosByOwner(user.value.uid)
-        .filter((memo) => memo.tags.some((memoTag) => memoTag.id === tag.value?.id))
-    : []
-)
-const memoPendingDelete = ref<Memo | null>(null)
+        .filter((memo) =>
+          memo.tags.some((memoTag) => memoTag.id === tag.value?.id),
+        )
+    : [],
+);
+const memoPendingDelete = ref<Memo | null>(null);
 
 const confirmMemoDelete = async () => {
   if (!user.value || !memoPendingDelete.value) {
-    return
+    return;
   }
 
-  await memoStore.deleteMemo(memoPendingDelete.value.id, user.value.uid)
-  memoPendingDelete.value = null
-}
+  await memoStore.deleteMemo(memoPendingDelete.value.id);
+  memoPendingDelete.value = null;
+};
 </script>
 
 <template>
@@ -32,13 +34,20 @@ const confirmMemoDelete = async () => {
       <TopLogoLink />
       <div>
         <p class="eyebrow">Tag</p>
-        <h1>{{ tag?.name ?? 'タグが見つかりません' }}</h1>
+        <h1>{{ tag?.name ?? "タグが見つかりません" }}</h1>
       </div>
     </header>
 
-    <MemoPreviewList v-if="tag" class="memo-list" :memos="filteredMemos" @delete="(memo) => memoPendingDelete = memo" />
+    <MemoPreviewList
+      v-if="tag"
+      class="memo-list"
+      :memos="filteredMemos"
+      @delete="(memo) => (memoPendingDelete = memo)"
+    />
 
-    <section v-else class="missing">指定されたタグ ID に一致するタグはありません。</section>
+    <section v-else class="missing">
+      指定されたタグ ID に一致するタグはありません。
+    </section>
 
     <ConfirmDeleteModal
       :open="Boolean(memoPendingDelete)"
@@ -55,7 +64,14 @@ const confirmMemoDelete = async () => {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   padding: 28px;
 }
 

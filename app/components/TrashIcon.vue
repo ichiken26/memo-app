@@ -1,5 +1,10 @@
 <template>
-  <svg class="trash-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <svg
+    class="trash-icon"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+  >
     <path d="M9 3h6l1 3h4v2H4V6h4l1-3Z" />
     <path d="M6 10h12l-1 10H7L6 10Z" />
     <path d="M10 12v6M14 12v6" />

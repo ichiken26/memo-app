@@ -1,0 +1,38 @@
+export const useMemoViewMode = () => {
+  const route = useRoute();
+  const router = useRouter();
+  const viewMode = computed<"edit" | "preview">(() =>
+    route.query.mode === "preview" ? "preview" : "edit",
+  );
+
+  const setMode = async (mode: "edit" | "preview") => {
+    if (import.meta.client) localStorage.setItem("memo-view-mode", mode);
+    await router.replace({ query: { ...route.query, mode } });
+  };
+
+  const modeShortcut = (event: KeyboardEvent) => {
+    if (!event.ctrlKey || !event.altKey) return;
+    if (event.key.toLowerCase() === "e") {
+      event.preventDefault();
+      void setMode("edit");
+    }
+    if (event.key.toLowerCase() === "p") {
+      event.preventDefault();
+      void setMode("preview");
+    }
+  };
+
+  onMounted(() => {
+    if (!route.query.mode) {
+      void setMode(
+        localStorage.getItem("memo-view-mode") === "preview"
+          ? "preview"
+          : "edit",
+      );
+    }
+    window.addEventListener("keydown", modeShortcut);
+  });
+  onBeforeUnmount(() => window.removeEventListener("keydown", modeShortcut));
+
+  return { viewMode, setMode };
+};

@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Noto+Sans:wght@400;500;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Noto+Sans:wght@400;500;700;800&display=swap");
+@import "katex/dist/katex.min.css";
 
 :root {
   color-scheme: light;
@@ -44,7 +45,7 @@
   --button-focus: rgba(49, 93, 168, 0.34);
 }
 
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f141d;
   --panel: #181e29;
@@ -101,7 +102,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Noto Sans JP', 'Noto Sans', sans-serif;
+  font-family: "Noto Sans JP", "Noto Sans", sans-serif;
   transition:
     background 0.2s,
     color 0.2s;
@@ -147,7 +148,7 @@ a {
   transform: translateY(1px) scale(0.98);
 }
 
-:where(button:disabled, [aria-disabled='true']) {
+:where(button:disabled, [aria-disabled="true"]) {
   box-shadow: none !important;
   cursor: not-allowed !important;
   filter: saturate(0.45);
@@ -255,7 +256,7 @@ a {
   transform: translateY(-1px) rotate(-5deg);
 }
 
-:root[data-theme='dark'] body button:not(.preset-button) {
+:root[data-theme="dark"] body button:not(.preset-button) {
   color: #ffffff !important;
 }
 

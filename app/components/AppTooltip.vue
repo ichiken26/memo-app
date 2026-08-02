@@ -1,5 +1,5 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ icon?: '?' | '!'; label: string }>(), { icon: '?' })
+withDefaults(defineProps<{ icon?: "?" | "!"; label: string }>(), { icon: "?" });
 </script>
 <template>
   <span class="tip" tabindex="0">

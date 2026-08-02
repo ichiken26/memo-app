@@ -1,23 +1,34 @@
 <script setup lang="ts">
-import type { MemoTag } from '~~/shared/memos'
+import type { MemoTag } from "~~/shared/memos";
 
 type TagDraft = {
-  name: string
-  color: string
-}
+  name: string;
+  color: string;
+};
 
-const memoStore = useMemoStore()
-const { user } = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+const memoStore = useMemoStore();
+const { user } = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
-const presetColors = ['#2563eb', '#059669', '#dc2626', '#7c3aed', '#ea580c', '#0891b2', '#4f46e5', '#0f766e', '#be123c']
-const drafts = reactive<Record<string, TagDraft>>({})
-const getDraft = (tag: MemoTag) => drafts[tag.id] ?? (drafts[tag.id] = { name: tag.name, color: tag.color })
-const newTagName = ref('')
-const newTagColor = ref('#2563eb')
-const statusMessage = ref('')
-const tagPendingDelete = ref<MemoTag | null>(null)
-const tagSaveTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const presetColors = [
+  "#2563eb",
+  "#059669",
+  "#dc2626",
+  "#7c3aed",
+  "#ea580c",
+  "#0891b2",
+  "#4f46e5",
+  "#0f766e",
+  "#be123c",
+];
+const drafts = reactive<Record<string, TagDraft>>({});
+const getDraft = (tag: MemoTag) =>
+  drafts[tag.id] ?? (drafts[tag.id] = { name: tag.name, color: tag.color });
+const newTagName = ref("");
+const newTagColor = ref("#2563eb");
+const statusMessage = ref("");
+const tagPendingDelete = ref<MemoTag | null>(null);
+const tagSaveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 watch(
   () => memoStore.tags.value,
@@ -25,115 +36,120 @@ watch(
     for (const tag of tags) {
       drafts[tag.id] = {
         name: drafts[tag.id]?.name ?? tag.name,
-        color: drafts[tag.id]?.color ?? tag.color
-      }
+        color: drafts[tag.id]?.color ?? tag.color,
+      };
     }
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 const sortedTags = computed(() =>
-  [...memoStore.tags.value].sort((a, b) => a.name.localeCompare(b.name))
-)
+  [...memoStore.tags.value].sort((a, b) => a.name.localeCompare(b.name)),
+);
 
 const saveTag = async (tagId: string) => {
   if (!user.value) {
-    return
+    return;
   }
 
-  const tag = memoStore.findTag(tagId)
-  const draft = drafts[tagId]
-  if (!tag || !draft || !draft.name.trim() || (draft.name === tag.name && draft.color === tag.color)) {
-    return
+  const tag = memoStore.findTag(tagId);
+  const draft = drafts[tagId];
+  if (
+    !tag ||
+    !draft ||
+    !draft.name.trim() ||
+    (draft.name === tag.name && draft.color === tag.color)
+  ) {
+    return;
   }
 
-  const updatedTag = await memoStore.updateTag(tagId, user.value.uid, draft)
+  const updatedTag = await memoStore.updateTag(tagId, draft);
   if (!updatedTag) {
-    return
+    return;
   }
 
   drafts[tagId] = {
     name: updatedTag.name,
-    color: updatedTag.color
-  }
-  statusMessage.value = `${updatedTag.name} を更新しました`
-}
+    color: updatedTag.color,
+  };
+  statusMessage.value = `${updatedTag.name} を更新しました`;
+};
 
 const queueTagSave = (tagId: string) => {
-  const timer = tagSaveTimers.get(tagId)
+  const timer = tagSaveTimers.get(tagId);
   if (timer) {
-    clearTimeout(timer)
+    clearTimeout(timer);
   }
 
   tagSaveTimers.set(
     tagId,
     setTimeout(() => {
-      tagSaveTimers.delete(tagId)
-      saveTag(tagId)
-    }, 900)
-  )
-}
+      tagSaveTimers.delete(tagId);
+      saveTag(tagId);
+    }, 900),
+  );
+};
 
 const confirmTagDelete = async () => {
   if (!user.value || !tagPendingDelete.value) {
-    return
+    return;
   }
 
-  const tag = tagPendingDelete.value
-  await memoStore.deleteTag(tag.id, user.value.uid)
-  delete drafts[tag.id]
-  tagPendingDelete.value = null
-  statusMessage.value = `${tag.name} を削除しました`
-}
+  const tag = tagPendingDelete.value;
+  await memoStore.deleteTag(tag.id);
+  delete drafts[tag.id];
+  tagPendingDelete.value = null;
+  statusMessage.value = `${tag.name} を削除しました`;
+};
 
 const createTag = async () => {
   if (!user.value) {
-    return
+    return;
   }
 
-  const createdTag = await memoStore.createTag(user.value.uid, newTagName.value)
+  const createdTag = await memoStore.createTag(newTagName.value);
   if (!createdTag) {
-    return
+    return;
   }
 
   const finalTag =
     createdTag.color === newTagColor.value
       ? createdTag
-      : await memoStore.updateTag(createdTag.id, user.value.uid, {
+      : await memoStore.updateTag(createdTag.id, {
           name: createdTag.name,
-          color: newTagColor.value
-        })
+          color: newTagColor.value,
+        });
 
   if (finalTag) {
     drafts[finalTag.id] = {
       name: finalTag.name,
-      color: finalTag.color
-    }
-    statusMessage.value = `${finalTag.name} を追加しました`
+      color: finalTag.color,
+    };
+    statusMessage.value = `${finalTag.name} を追加しました`;
   }
 
-  newTagName.value = ''
-  newTagColor.value = '#2563eb'
-}
+  newTagName.value = "";
+  newTagColor.value = "#2563eb";
+};
 
 watch(
   drafts,
   () => {
     for (const tag of memoStore.tags.value) {
-      const draft = drafts[tag.id]
+      const draft = drafts[tag.id];
       if (draft && (draft.name !== tag.name || draft.color !== tag.color)) {
-        queueTagSave(tag.id)
+        queueTagSave(tag.id);
       }
     }
   },
-  { deep: true }
-)
+  { deep: true },
+);
 
 onBeforeUnmount(() => {
   for (const timer of tagSaveTimers.values()) {
-    clearTimeout(timer)
+    clearTimeout(timer);
   }
-})
+});
 </script>
 
 <template>
@@ -149,7 +165,12 @@ onBeforeUnmount(() => {
 
     <section class="create-panel" aria-label="タグの新規追加">
       <form class="create-form" @submit.prevent="createTag">
-        <input v-model="newTagName" type="text" placeholder="新しいタグ名" aria-label="新しいタグ名">
+        <input
+          v-model="newTagName"
+          type="text"
+          placeholder="新しいタグ名"
+          aria-label="新しいタグ名"
+        />
         <div class="color-tools">
           <div class="preset-colors" aria-label="新しいタグのプリセット色">
             <button
@@ -165,10 +186,20 @@ onBeforeUnmount(() => {
           </div>
           <label class="color-field">
             <span :style="{ backgroundColor: newTagColor }" />
-            <input v-model="newTagColor" type="color" aria-label="新しいタグの色を自由に選択">
+            <input
+              v-model="newTagColor"
+              type="color"
+              aria-label="新しいタグの色を自由に選択"
+            />
           </label>
         </div>
-        <button class="save-button" type="submit" :disabled="!newTagName.trim()">保存</button>
+        <button
+          class="save-button"
+          type="submit"
+          :disabled="!newTagName.trim()"
+        >
+          保存
+        </button>
       </form>
     </section>
 
@@ -177,11 +208,19 @@ onBeforeUnmount(() => {
     <section class="tag-list" aria-label="タグ編集">
       <article v-for="tag in sortedTags" :key="tag.id" class="tag-row">
         <div class="tag-preview">
-          <span class="tag-dot" :style="{ backgroundColor: drafts[tag.id]?.color ?? tag.color }" />
+          <span
+            class="tag-dot"
+            :style="{ backgroundColor: drafts[tag.id]?.color ?? tag.color }"
+          />
           <span>{{ drafts[tag.id]?.name || tag.name }}</span>
         </div>
 
-        <input v-model="getDraft(tag).name" class="name-input" type="text" aria-label="タグ名">
+        <input
+          v-model="getDraft(tag).name"
+          class="name-input"
+          type="text"
+          aria-label="タグ名"
+        />
 
         <div class="color-tools">
           <div class="preset-colors" aria-label="タグのプリセット色">
@@ -197,17 +236,31 @@ onBeforeUnmount(() => {
             />
           </div>
           <label class="color-field">
-            <span :style="{ backgroundColor: drafts[tag.id]?.color ?? tag.color }" />
-            <input v-model="getDraft(tag).color" type="color" aria-label="タグの色を自由に選択">
+            <span
+              :style="{ backgroundColor: drafts[tag.id]?.color ?? tag.color }"
+            />
+            <input
+              v-model="getDraft(tag).color"
+              type="color"
+              aria-label="タグの色を自由に選択"
+            />
           </label>
         </div>
 
         <div class="row-actions">
-          <button class="delete-button" type="button" @click="tagPendingDelete = tag">削除</button>
+          <button
+            class="delete-button"
+            type="button"
+            @click="tagPendingDelete = tag"
+          >
+            削除
+          </button>
         </div>
       </article>
 
-      <div v-if="sortedTags.length === 0" class="empty">タグはまだありません。</div>
+      <div v-if="sortedTags.length === 0" class="empty">
+        タグはまだありません。
+      </div>
     </section>
 
     <ConfirmDeleteModal
@@ -225,7 +278,14 @@ onBeforeUnmount(() => {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   padding: 28px;
 }
 
@@ -401,7 +461,10 @@ h1 {
 }
 
 .tag-row {
-  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1fr) minmax(260px, 1.1fr) auto;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1fr) minmax(
+      260px,
+      1.1fr
+    ) auto;
   padding: 14px;
 }
 

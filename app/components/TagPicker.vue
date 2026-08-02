@@ -1,56 +1,56 @@
 <script setup lang="ts">
-import { nextTick } from 'vue'
-import type { MemoTag } from '~~/shared/memos'
+import { nextTick } from "vue";
+import type { MemoTag } from "~~/shared/memos";
 
 const props = defineProps<{
-  modelValue: MemoTag[]
-  availableTags: MemoTag[]
-}>()
+  modelValue: MemoTag[];
+  availableTags: MemoTag[];
+}>();
 
 const emit = defineEmits<{
-  (event: 'update:modelValue', value: MemoTag[]): void
-  (event: 'createTag', name: string, selectTag: (tag: MemoTag) => void): void
-}>()
+  (event: "update:modelValue", value: MemoTag[]): void;
+  (event: "createTag", name: string, selectTag: (tag: MemoTag) => void): void;
+}>();
 
-const isOpen = ref(false)
-const newTagName = ref('')
+const isOpen = ref(false);
+const newTagName = ref("");
 
-const selectedIds = computed(() => props.modelValue.map((tag) => tag.id))
+const selectedIds = computed(() => props.modelValue.map((tag) => tag.id));
 
 const toggleTag = (tag: MemoTag) => {
   if (selectedIds.value.includes(tag.id)) {
     emit(
-      'update:modelValue',
-      props.modelValue.filter((selectedTag) => selectedTag.id !== tag.id)
-    )
-    return
+      "update:modelValue",
+      props.modelValue.filter((selectedTag) => selectedTag.id !== tag.id),
+    );
+    return;
   }
 
-  emit('update:modelValue', [...props.modelValue, tag])
-}
+  emit("update:modelValue", [...props.modelValue, tag]);
+};
 
 const removeTag = (tag: MemoTag) => {
   emit(
-    'update:modelValue',
-    props.modelValue.filter((selectedTag) => selectedTag.id !== tag.id)
-  )
-}
+    "update:modelValue",
+    props.modelValue.filter((selectedTag) => selectedTag.id !== tag.id),
+  );
+};
 
 const createTag = async () => {
-  const name = newTagName.value.trim()
+  const name = newTagName.value.trim();
   if (!name) {
-    return
+    return;
   }
 
-  emit('createTag', name, (createdTag) => {
+  emit("createTag", name, (createdTag) => {
     if (!selectedIds.value.includes(createdTag.id)) {
-      emit('update:modelValue', [...props.modelValue, createdTag])
+      emit("update:modelValue", [...props.modelValue, createdTag]);
     }
-  })
-  newTagName.value = ''
-  isOpen.value = true
-  await nextTick()
-}
+  });
+  newTagName.value = "";
+  isOpen.value = true;
+  await nextTick();
+};
 </script>
 
 <template>
@@ -64,7 +64,12 @@ const createTag = async () => {
         :as-link="false"
         @remove="removeTag"
       />
-      <button class="add-button" type="button" :aria-expanded="isOpen" @click="isOpen = !isOpen">
+      <button
+        class="add-button"
+        type="button"
+        :aria-expanded="isOpen"
+        @click="isOpen = !isOpen"
+      >
         +
       </button>
     </div>
@@ -85,7 +90,7 @@ const createTag = async () => {
       </div>
 
       <form class="new-tag-form" @submit.prevent="createTag">
-        <input v-model="newTagName" type="text" placeholder="新しいタグ名">
+        <input v-model="newTagName" type="text" placeholder="新しいタグ名" />
         <button type="submit">追加</button>
       </form>
     </div>
