@@ -36,16 +36,16 @@ const emit = defineEmits<{
 }
 
 .result-head span {
-  color: #52616b;
+  color: var(--muted);
   font-weight: 800;
 }
 
 .empty {
   border: 1px dashed #c6c9ce;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   padding: 28px;
-  color: #52616b;
+  color: var(--muted);
   text-align: center;
 }
 

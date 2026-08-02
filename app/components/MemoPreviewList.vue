@@ -73,7 +73,7 @@ const deleteMemo = (memo: Memo) => {
   overflow: hidden;
   border: 1px solid #deddd6;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   padding: 18px 42px 18px 18px;
   cursor: pointer;
   gap: 8px;
@@ -82,7 +82,7 @@ const deleteMemo = (memo: Memo) => {
 .memo-preview-card:focus-within,
 .memo-preview-card:focus,
 .memo-preview-card:hover {
-  border-color: #1f2933;
+  border-color: var(--text);
 }
 
 .memo-preview-card::after {
@@ -91,7 +91,7 @@ const deleteMemo = (memo: Memo) => {
   bottom: 0;
   left: 0;
   height: 42px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #ffffff 70%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--panel) 70%);
   content: "";
   pointer-events: none;
 }
@@ -109,7 +109,7 @@ const deleteMemo = (memo: Memo) => {
 .memo-preview-card p {
   min-height: 0;
   margin: 0;
-  color: #52616b;
+  color: var(--muted);
   line-height: 1.7;
   overflow: hidden;
   white-space: pre-wrap;
@@ -163,7 +163,7 @@ const deleteMemo = (memo: Memo) => {
 .delete-button:hover {
   border-color: #dc2626;
   background: #dc2626;
-  color: #ffffff;
+  color: var(--panel);
 }
 
 </style>

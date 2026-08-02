@@ -97,8 +97,8 @@ const confirmMemoDelete = async () => {
 <style scoped>
 .search-shell {
   min-height: 100vh;
-  background: #f7f7f4;
-  color: #1f2933;
+  background: var(--bg);
+  color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   padding: 28px;
 }
@@ -125,7 +125,7 @@ a {
 
 .eyebrow {
   margin: 0 0 4px;
-  color: #52616b;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;

@@ -1,0 +1,314 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Noto+Sans:wght@400;500;700;800&display=swap');
+
+:root {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --panel-soft: #f2f5fb;
+  --text: #172033;
+  --muted: #64748b;
+  --border: #d5deea;
+  --primary: #315da8;
+  --danger: #ba1a1a;
+  --shadow: 0 16px 42px rgba(30, 41, 59, 0.1);
+  --button-label: #1b1b1f;
+  --button-surface: linear-gradient(145deg, #ffffff 0%, #edf2fa 100%);
+  --button-surface-hover: linear-gradient(145deg, #ffffff 0%, #e4ebf6 100%);
+  --button-border: #c4cedd;
+  --button-shadow:
+    0 2px 5px rgba(30, 41, 59, 0.12), 0 8px 20px rgba(30, 41, 59, 0.07);
+  --button-primary: linear-gradient(
+    135deg,
+    #4776c7 0%,
+    #315da8 55%,
+    #244983 100%
+  );
+  --button-primary-hover: linear-gradient(
+    135deg,
+    #5685d5 0%,
+    #3868bb 55%,
+    #285394 100%
+  );
+  --button-danger: linear-gradient(
+    135deg,
+    #dc4545 0%,
+    #ba1a1a 65%,
+    #8f1111 100%
+  );
+  --button-danger-hover: linear-gradient(
+    135deg,
+    #e65a5a 0%,
+    #c82929 65%,
+    #a01515 100%
+  );
+  --button-focus: rgba(49, 93, 168, 0.34);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0f141d;
+  --panel: #181e29;
+  --panel-soft: #222a37;
+  --text: #f2f5fb;
+  --muted: #aeb9c9;
+  --border: #3d4859;
+  --primary: #a9c7ff;
+  --danger: #ffb4ab;
+  --shadow: 0 16px 42px rgba(0, 0, 0, 0.34);
+  --button-label: #ffffff;
+  --button-surface: linear-gradient(145deg, #323c4b 0%, #242c38 100%);
+  --button-surface-hover: linear-gradient(145deg, #3d4859 0%, #2d3745 100%);
+  --button-border: #536176;
+  --button-shadow: 0 2px 5px rgba(0, 0, 0, 0.32), 0 9px 24px rgba(0, 0, 0, 0.2);
+  --button-primary: linear-gradient(
+    135deg,
+    #6f9de8 0%,
+    #4776c7 55%,
+    #315da8 100%
+  );
+  --button-primary-hover: linear-gradient(
+    135deg,
+    #82adf0 0%,
+    #5686d3 55%,
+    #3b68b5 100%
+  );
+  --button-danger: linear-gradient(
+    135deg,
+    #d84b52 0%,
+    #b52b32 65%,
+    #8b1d24 100%
+  );
+  --button-danger-hover: linear-gradient(
+    135deg,
+    #e45d64 0%,
+    #c33840 65%,
+    #9e252d 100%
+  );
+  --button-focus: rgba(169, 199, 255, 0.48);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__nuxt {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', 'Noto Sans', sans-serif;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.memo-red {
+  color: #dc2626;
+}
+
+.page-shell {
+  min-height: 100vh;
+  padding: 28px;
+}
+
+/* Material 3 inspired button foundation and state layers. */
+:where(button, .button-link, .back-link) {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease,
+    transform 100ms ease;
+}
+
+:where(button, .button-link, .back-link):focus-visible {
+  outline: 3px solid var(--button-focus) !important;
+  outline-offset: 3px;
+}
+
+:where(button, .button-link, .back-link):active {
+  transform: translateY(1px) scale(0.98);
+}
+
+:where(button:disabled, [aria-disabled='true']) {
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  filter: saturate(0.45);
+  opacity: 0.48 !important;
+  transform: none;
+}
+
+.google-button,
+.ghost-button,
+.button-link,
+.back-link,
+.submit-button,
+.starter-button,
+.save-button,
+.cancel-button,
+.confirm-button,
+.editor-header .actions button,
+.new-tag-form button,
+.tag-picker .add-button,
+.tags-shell .delete-button {
+  min-height: 44px !important;
+  border: 1px solid var(--button-border) !important;
+  border-radius: 14px !important;
+  background: var(--button-surface) !important;
+  box-shadow: var(--button-shadow) !important;
+  color: var(--button-label) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.015em;
+  text-decoration: none;
+}
+
+.google-button:hover,
+.ghost-button:hover,
+.button-link:hover,
+.back-link:hover,
+.cancel-button:hover,
+.tag-picker .add-button:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--primary) 48%,
+    var(--button-border)
+  ) !important;
+  background: var(--button-surface-hover) !important;
+  box-shadow:
+    0 4px 8px rgba(30, 41, 59, 0.14),
+    0 12px 26px rgba(30, 41, 59, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.primary-link,
+.submit-button,
+.starter-button,
+.save-button,
+.editor-header .actions .save,
+.new-tag-form button {
+  border-color: transparent !important;
+  background: var(--button-primary) !important;
+  color: #ffffff !important;
+}
+
+.primary-link:hover,
+.submit-button:hover,
+.starter-button:hover,
+.save-button:hover,
+.editor-header .actions .save:hover,
+.new-tag-form button:hover {
+  background: var(--button-primary-hover) !important;
+  box-shadow:
+    0 5px 12px rgba(49, 93, 168, 0.3),
+    0 14px 30px rgba(49, 93, 168, 0.18) !important;
+  transform: translateY(-1px);
+}
+
+.logout-link,
+.confirm-button,
+.editor-header .actions .delete,
+.tags-shell .delete-button {
+  border-color: transparent !important;
+  background: var(--button-danger) !important;
+  color: #ffffff !important;
+}
+
+.logout-link:hover,
+.confirm-button:hover,
+.editor-header .actions .delete:hover,
+.tags-shell .delete-button:hover {
+  background: var(--button-danger-hover) !important;
+  box-shadow:
+    0 5px 12px rgba(186, 26, 26, 0.26),
+    0 14px 30px rgba(186, 26, 26, 0.14) !important;
+  transform: translateY(-1px);
+}
+
+.theme-toggle {
+  border: 1px solid var(--button-border) !important;
+  border-radius: 14px !important;
+  background: var(--button-surface) !important;
+  box-shadow: var(--button-shadow) !important;
+  color: var(--button-label) !important;
+}
+
+.theme-toggle:hover {
+  background: var(--button-surface-hover) !important;
+  color: var(--button-label) !important;
+  transform: translateY(-1px) rotate(-5deg);
+}
+
+:root[data-theme='dark'] body button:not(.preset-button) {
+  color: #ffffff !important;
+}
+
+.context button,
+.history-popover button {
+  border-radius: 10px !important;
+  color: var(--button-label) !important;
+}
+
+.context button:hover,
+.history-popover button:hover {
+  background: var(--button-surface-hover) !important;
+}
+
+.memo-preview-card .delete-button {
+  border-color: var(--button-border) !important;
+  background: color-mix(in srgb, var(--panel) 88%, transparent) !important;
+  color: var(--muted) !important;
+  backdrop-filter: blur(8px);
+}
+
+.memo-preview-card .delete-button:hover,
+.memo-preview-card .delete-button:focus-visible {
+  border-color: var(--danger) !important;
+  background: var(--button-danger) !important;
+  color: #ffffff !important;
+  box-shadow: 0 5px 14px rgba(186, 26, 26, 0.28) !important;
+}
+
+.preset-button {
+  transition:
+    box-shadow 150ms ease,
+    transform 100ms ease;
+}
+
+.preset-button:hover {
+  transform: scale(1.12);
+}
+
+.preset-button:focus-visible,
+.preset-button.selected {
+  outline: 3px solid var(--button-focus) !important;
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .page-shell {
+    padding: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(button, .button-link, .back-link) {
+    transition: none;
+  }
+}

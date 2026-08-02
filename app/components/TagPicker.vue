@@ -110,8 +110,8 @@ const createTag = async () => {
   height: 32px;
   border: 1px solid #cfd3d8;
   border-radius: 50%;
-  background: #1f2933;
-  color: #ffffff;
+  background: var(--text);
+  color: var(--panel);
   cursor: pointer;
   font-size: 22px;
   line-height: 1;
@@ -119,9 +119,9 @@ const createTag = async () => {
 
 .picker-panel {
   display: grid;
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   padding: 12px;
   gap: 12px;
 }
@@ -131,19 +131,19 @@ const createTag = async () => {
   min-height: 36px;
   align-items: center;
   gap: 7px;
-  border: 1px solid #d9d8d2;
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0 12px;
-  background: #f7f7f4;
-  color: #52616b;
+  background: var(--bg);
+  color: var(--muted);
   cursor: pointer;
   font-weight: 800;
 }
 
 .tag-option.selected {
-  border-color: #1f2933;
+  border-color: var(--text);
   background: #e8edf2;
-  color: #1f2933;
+  color: var(--text);
 }
 
 .tag-dot {
@@ -170,8 +170,8 @@ const createTag = async () => {
   min-height: 40px;
   border: 0;
   border-radius: 8px;
-  background: #1f2933;
-  color: #ffffff;
+  background: var(--text);
+  color: var(--panel);
   cursor: pointer;
   font-weight: 800;
   padding: 0 14px;
