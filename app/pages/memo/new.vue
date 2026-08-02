@@ -56,7 +56,11 @@ const createAndSelectTag = async (
 
 <style scoped>
 .new-memo-shell {
-  min-height: 100vh;
+  display: flex;
+  height: 100dvh;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   padding: 28px;
@@ -64,12 +68,16 @@ const createAndSelectTag = async (
 
 .memo-header,
 .memo-editor {
+  width: 100%;
+  min-height: 0;
+  flex: 1;
   max-width: 1066px;
   margin-right: auto;
   margin-left: auto;
 }
 
 .memo-header {
+  flex: 0 0 auto;
   display: flex;
   min-height: 48px;
   gap: 16px;

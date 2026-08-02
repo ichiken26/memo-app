@@ -198,6 +198,7 @@ onBeforeRouteLeave(() => {
         </div>
       </div>
       <MemoPreview
+        class="memo-preview-workspace"
         :key="memo.id"
         editor-mode="edit"
         :view-mode="viewMode"
@@ -221,7 +222,11 @@ onBeforeRouteLeave(() => {
 
 <style scoped>
 .memo-shell {
-  min-height: 100vh;
+  display: flex;
+  height: 100dvh;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   padding: 28px;
@@ -233,6 +238,7 @@ a {
 }
 
 .memo-header {
+  flex: 0 0 auto;
   display: flex;
   min-height: 48px;
   align-items: center;
@@ -250,8 +256,18 @@ a {
 }
 
 .memo-detail {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
   max-width: 1066px;
   margin: 16px auto 0;
+}
+
+.memo-preview-workspace {
+  min-height: 0;
+  flex: 1;
 }
 
 .detail-meta {

@@ -91,6 +91,9 @@ const blocks = computed(() => parseMemo(body.value)),
 </template>
 <style scoped>
 .memo-workspace {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -121,6 +124,9 @@ const blocks = computed(() => parseMemo(body.value)),
 }
 .split {
   display: grid;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
   grid-template-columns: 1fr 1fr;
 }
 .split.previewOnly {
@@ -128,7 +134,8 @@ const blocks = computed(() => parseMemo(body.value)),
 }
 .preview {
   min-width: 0;
-  min-height: calc(100vh - 230px);
+  min-height: 0;
+  overflow: auto;
   padding: 22px;
   border-left: 1px solid var(--border);
   line-height: 1.8;

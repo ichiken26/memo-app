@@ -155,13 +155,15 @@ const paste = (e: ClipboardEvent) => {
 <style scoped>
 .editor-area {
   position: relative;
-  min-height: calc(100vh - 230px);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 .editor-area textarea {
   width: 100%;
   height: 100%;
-  min-height: calc(100vh - 230px);
-  resize: vertical;
+  min-height: 0;
+  resize: none;
   border: 0;
   background: var(--panel);
   color: var(--text);
