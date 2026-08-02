@@ -15,6 +15,24 @@ const saveStatus = ref("保存済み");
 const hasUnsavedChanges = ref(false);
 const isSaving = ref(false);
 const { viewMode, setMode } = useMemoViewMode();
+const currentDraft = ref<{
+  title: string;
+  body: string;
+  tags: MemoTag[];
+} | null>(null);
+watch(
+  memo,
+  (value) => {
+    if (value && !currentDraft.value) {
+      currentDraft.value = {
+        title: value.title,
+        body: value.body,
+        tags: value.tags.map((tag) => ({ ...tag })),
+      };
+    }
+  },
+  { immediate: true },
+);
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let changeVersion = 0;
 
@@ -53,6 +71,7 @@ const queueAutoSave = (value: {
   body: string;
   tags: MemoTag[];
 }) => {
+  currentDraft.value = value;
   if (!memo.value) {
     return;
   }
@@ -142,12 +161,15 @@ onBeforeRouteLeave(() => {
     <section v-if="memo" class="memo-detail">
       <div class="detail-meta">
         <span>更新日: {{ memo.updatedAt }}</span>
-        <div>
+        <div class="page-actions">
           <button
-            class="mode-text"
+            class="mode-toggle"
             type="button"
+            role="switch"
+            :aria-checked="viewMode === 'edit'"
             @click="setMode(viewMode === 'edit' ? 'preview' : 'edit')"
           >
+            <span class="toggle-track" aria-hidden="true"><span /></span>
             {{ viewMode === "edit" ? "編集モード" : "閲覧モード" }}
           </button>
           <button
@@ -156,6 +178,21 @@ onBeforeRouteLeave(() => {
             @click="router.push('/memo/new')"
           >
             新規作成
+          </button>
+          <button
+            class="save-button"
+            type="button"
+            :disabled="isSaving"
+            @click="currentDraft && saveMemo(currentDraft)"
+          >
+            保存
+          </button>
+          <button
+            class="delete-button"
+            type="button"
+            @click="deleteCurrentMemo"
+          >
+            削除
           </button>
         </div>
       </div>
@@ -166,6 +203,7 @@ onBeforeRouteLeave(() => {
         :memo="memo"
         :available-tags="memoStore.tags.value"
         :save-status="saveStatus"
+        :header-actions="false"
         @change="queueAutoSave"
         @save="saveMemo"
         @delete="deleteCurrentMemo"
@@ -223,6 +261,28 @@ a {
   font-weight: 800;
 }
 
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.save-button,
+.delete-button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 14px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+.save-button {
+  background: var(--primary);
+}
+.delete-button {
+  background: var(--danger);
+}
+
 .ghost-button {
   min-height: 36px;
   border: 1px solid #cfd3d8;
@@ -234,12 +294,38 @@ a {
   padding: 0 12px;
 }
 
-.mode-text {
+.mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 0;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
   font: inherit;
   font-weight: 800;
+}
+.toggle-track {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--muted);
+}
+.toggle-track span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s ease;
+}
+.mode-toggle[aria-checked="true"] .toggle-track {
+  background: var(--primary);
+}
+.mode-toggle[aria-checked="true"] .toggle-track span {
+  transform: translateX(14px);
 }
 </style>

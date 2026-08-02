@@ -6,6 +6,7 @@ defineProps<{
   availableTags: MemoTag[];
   mode: "create" | "edit";
   saveStatus?: string;
+  showActions?: boolean;
 }>();
 const emit = defineEmits<{
   (e: "update:title", v: string): void;
@@ -34,7 +35,7 @@ const emit = defineEmits<{
     <div class="status">
       {{ mode === "edit" ? saveStatus : "作成時に保存されます" }}
     </div>
-    <div class="actions">
+    <div v-if="showActions !== false" class="actions">
       <button class="save" type="button" @click="emit('save')">保存</button>
       <button
         v-if="mode === 'edit'"

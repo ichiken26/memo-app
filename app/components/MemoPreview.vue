@@ -7,6 +7,7 @@ const props = defineProps<{
   editorMode: "create" | "edit";
   saveStatus?: string;
   viewMode?: "edit" | "preview";
+  headerActions?: boolean;
 }>();
 const emit = defineEmits<{
   (e: "save", v: { title: string; body: string; tags: MemoTag[] }): void;
@@ -42,6 +43,7 @@ const blocks = computed(() => parseMemo(body.value)),
       :available-tags="availableTags"
       :mode="editorMode"
       :save-status="saveStatus"
+      :show-actions="headerActions !== false"
       @save="emit('save', value)"
       @delete="emit('delete')"
       @create-tag="(n, s) => emit('createTag', n, s)"

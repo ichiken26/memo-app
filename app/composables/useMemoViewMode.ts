@@ -6,7 +6,6 @@ export const useMemoViewMode = () => {
   );
 
   const setMode = async (mode: "edit" | "preview") => {
-    if (import.meta.client) localStorage.setItem("memo-view-mode", mode);
     await router.replace({ query: { ...route.query, mode } });
   };
 
@@ -24,11 +23,7 @@ export const useMemoViewMode = () => {
 
   onMounted(() => {
     if (!route.query.mode) {
-      void setMode(
-        localStorage.getItem("memo-view-mode") === "preview"
-          ? "preview"
-          : "edit",
-      );
+      void setMode("edit");
     }
     window.addEventListener("keydown", modeShortcut);
   });
