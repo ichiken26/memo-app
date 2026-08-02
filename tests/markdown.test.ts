@@ -86,3 +86,20 @@ test("red text notation renders safely and supports inline Markdown", () => {
   assert.doesNotMatch(unsafe, /<img/);
   assert.match(unsafe, /&lt;img/);
 });
+test("red and bold notation works in either nesting order", () => {
+  const redOutside = (
+    parseMemo("==**important**=={red}")[0] as { content: string }
+  ).content;
+  assert.match(
+    redOutside,
+    /<span class="memo-red"><strong>important<\/strong><\/span>/,
+  );
+
+  const boldOutside = (
+    parseMemo("**==important=={red}**")[0] as { content: string }
+  ).content;
+  assert.match(
+    boldOutside,
+    /<strong><span class="memo-red">important<\/span><\/strong>/,
+  );
+});

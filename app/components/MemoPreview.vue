@@ -103,6 +103,12 @@ const blocks = computed(() => parseMemo(body.value)),
   font-weight: 900;
 }
 
+.html :deep(strong .memo-red),
+.html :deep(.memo-red strong) {
+  color: var(--memo-red);
+  font-weight: 900;
+}
+
 .html :deep(table) {
   width: 100%;
   border-collapse: collapse;
