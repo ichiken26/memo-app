@@ -12,6 +12,8 @@ const shortcuts = computed(() => [
         "Ctrl+Alt+E / P: 編集 / 閲覧",
         "Ctrl+B / I: 太字 / 斜体",
         "Ctrl+Alt+R: 赤字",
+        "Tab: 段落を下げる",
+        "Shift+Tab / 行頭Backspace: 段落を戻す",
       ]
     : []),
 ]);

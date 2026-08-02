@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { indentMarkdownLines } from "~~/shared/markdown";
+
 const props = defineProps<{ modelValue: string }>();
 const apiFetch = useApiFetch();
 const emit = defineEmits<{
@@ -15,6 +17,21 @@ const textarea = ref<HTMLTextAreaElement | null>(null),
   uploading = ref(false);
 const uploadError = ref("");
 const { format, insertMedia } = useMemoFormatting(body, textarea);
+const indent = (outdent = false) => {
+  const el = textarea.value;
+  if (!el) return;
+  const result = indentMarkdownLines(
+    el.value,
+    el.selectionStart,
+    el.selectionEnd,
+    outdent,
+  );
+  body.value = result.value;
+  nextTick(() => {
+    el.focus();
+    el.setSelectionRange(result.selectionStart, result.selectionEnd);
+  });
+};
 const close = () => (menu.value.open = false);
 const context = (e: MouseEvent) => {
   menu.value = { open: true, x: e.clientX, y: e.clientY };
@@ -63,7 +80,29 @@ const onFiles = (files: FileList | null) => {
   if (image) upload(image);
 };
 const keydown = (e: KeyboardEvent) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+  if (e.key === "Tab" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    indent(e.shiftKey);
+  } else if (
+    e.key === "Backspace" &&
+    !e.ctrlKey &&
+    !e.metaKey &&
+    !e.altKey &&
+    textarea.value &&
+    textarea.value.selectionStart === textarea.value.selectionEnd &&
+    /^(?: +|\t+)$/.test(
+      textarea.value.value.slice(
+        textarea.value.value.lastIndexOf(
+          "\n",
+          textarea.value.selectionStart - 1,
+        ) + 1,
+        textarea.value.selectionStart,
+      ),
+    )
+  ) {
+    e.preventDefault();
+    indent(true);
+  } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
     e.preventDefault();
     emit("save");
   } else if (

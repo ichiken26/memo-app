@@ -122,6 +122,62 @@ const blocks = computed(() => parseMemo(body.value)),
   border: 1px solid var(--border);
   padding: 8px 10px;
 }
+
+.html :deep(ul:not(.contains-task-list)) {
+  padding-left: 28px;
+  list-style: disc outside;
+}
+
+.html :deep(ul:not(.contains-task-list) ul:not(.contains-task-list)) {
+  list-style-type: circle;
+}
+
+.html :deep(ol) {
+  padding-left: 32px;
+  list-style: decimal outside;
+}
+
+.html :deep(.contains-task-list) {
+  padding-left: 28px;
+  list-style: none;
+}
+
+.html :deep(.contains-task-list > li:not(.task-list-item)) {
+  list-style: disc outside;
+}
+
+.html :deep(.task-list-item) {
+  list-style: none;
+}
+
+.html :deep(.contains-task-list > .task-list-item) {
+  margin-left: -28px;
+  padding-left: 28px;
+}
+
+.html :deep(.task-list-item .contains-task-list) {
+  padding-left: 28px;
+}
+
+.html :deep(.task-list-item-checkbox) {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0 9px 0 0;
+  border: 2px solid #000000;
+  border-radius: 3px;
+  background-color: #ffffff;
+  vertical-align: -3px;
+  opacity: 1;
+}
+
+.html :deep(.task-list-item-checkbox:checked) {
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='m3 8 3 3 7-7'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+}
 .split {
   display: grid;
   min-height: 0;

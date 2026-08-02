@@ -1,4 +1,5 @@
 import MarkdownIt from "markdown-it";
+import taskLists from "markdown-it-task-lists";
 import katex from "katex";
 
 export type MemoBlock =
@@ -7,7 +8,50 @@ export type MemoBlock =
   | { type: "link"; title: string; url: string }
   | { type: "mermaid"; content: string };
 
+export const indentMarkdownLines = (
+  value: string,
+  selectionStart: number,
+  selectionEnd: number,
+  outdent = false,
+) => {
+  const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+  const selectionEndsAtLineStart =
+    selectionEnd > selectionStart && value[selectionEnd - 1] === "\n";
+  const effectiveEnd = selectionEndsAtLineStart ? selectionEnd - 1 : selectionEnd;
+  const nextLineBreak = value.indexOf("\n", effectiveEnd);
+  const lineEnd = nextLineBreak === -1 ? value.length : nextLineBreak;
+  const selectedLines = value.slice(lineStart, lineEnd);
+
+  if (!outdent) {
+    const indented = selectedLines.replace(/^/gm, "  ");
+    const lineCount = (selectedLines.match(/^/gm) ?? []).length;
+    return {
+      value: value.slice(0, lineStart) + indented + value.slice(lineEnd),
+      selectionStart: selectionStart + 2,
+      selectionEnd: selectionEnd + lineCount * 2,
+    };
+  }
+
+  let removedBeforeStart = 0;
+  let removedTotal = 0;
+  const outdented = selectedLines.replace(
+    /^( {1,2}|\t)/gm,
+    (indentation, offset: number) => {
+      const removed = indentation.length;
+      if (lineStart + offset < selectionStart) removedBeforeStart += removed;
+      removedTotal += removed;
+      return "";
+    },
+  );
+  return {
+    value: value.slice(0, lineStart) + outdented + value.slice(lineEnd),
+    selectionStart: Math.max(lineStart, selectionStart - removedBeforeStart),
+    selectionEnd: Math.max(lineStart, selectionEnd - removedTotal),
+  };
+};
+
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true });
+md.use(taskLists, { enabled: false, label: false, labelAfter: false });
 md.validateLink = (url) => safeUrl(url) !== null;
 
 export const safeUrl = (value: string) => {
@@ -22,7 +66,11 @@ export const safeUrl = (value: string) => {
 const renderMarkdown = (source: string) => {
   const math: string[] = [];
   const redText: string[] = [];
-  const withRedPlaceholders = source.replace(
+  const normalizedSource = source.replace(
+    /^(\s*[-*+]\s+)\[\](?=\s|$)/gm,
+    "$1[ ]",
+  );
+  const withRedPlaceholders = normalizedSource.replace(
     /==([^=\n]+)==\{red\}/g,
     (_match, content: string) => {
       const token = `MEMOREDTOKEN${redText.length}END`;

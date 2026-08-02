@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   findMediaSpacingWarnings,
+  indentMarkdownLines,
   insertMediaNotation,
   mediaNotation,
   parseMemo,
@@ -102,4 +103,48 @@ test("red and bold notation works in either nesting order", () => {
     boldOutside,
     /<strong><span class="memo-red">important<\/span><\/strong>/,
   );
+});
+test("task list notation supports checked, standard unchecked and compact unchecked items", () => {
+  const content = (
+    parseMemo("- [x] done\n- [ ] pending\n- [] compact")[0] as {
+      content: string;
+    }
+  ).content;
+  assert.match(
+    content,
+    /<input[^>]*checked=""[^>]*disabled=""[^>]*type="checkbox"/,
+  );
+  assert.doesNotMatch(content, /id="task-item-/);
+  assert.equal((content.match(/type="checkbox"/g) ?? []).length, 3);
+  assert.equal((content.match(/checked=""/g) ?? []).length, 1);
+  assert.match(content, /pending/);
+  assert.match(content, /compact/);
+});
+test("task lists retain nested list levels", () => {
+  const content = (
+    parseMemo("- [ ] parent\n  - [x] child")[0] as { content: string }
+  ).content;
+  assert.match(content, /<li class="task-list-item">[\s\S]*<ul class="contains-task-list">/);
+  assert.equal((content.match(/type="checkbox"/g) ?? []).length, 2);
+});
+test("Tab indentation indents and Shift+Tab restores selected Markdown lines", () => {
+  const source = "- parent\n- child";
+  const indented = indentMarkdownLines(source, 9, source.length);
+  assert.equal(indented.value, "- parent\n  - child");
+  assert.deepEqual(
+    indentMarkdownLines(
+      indented.value,
+      indented.selectionStart,
+      indented.selectionEnd,
+      true,
+    ),
+    { value: source, selectionStart: 9, selectionEnd: source.length },
+  );
+});
+test("line-start Backspace outdents one indentation level", () => {
+  assert.deepEqual(indentMarkdownLines("    - child", 4, 4, true), {
+    value: "  - child",
+    selectionStart: 2,
+    selectionEnd: 2,
+  });
 });
