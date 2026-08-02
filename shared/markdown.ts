@@ -8,6 +8,8 @@ export type MemoBlock =
   | { type: "link"; title: string; url: string }
   | { type: "mermaid"; content: string };
 
+const MARKDOWN_INDENT = "    ";
+
 export const indentMarkdownLines = (
   value: string,
   selectionStart: number,
@@ -23,19 +25,19 @@ export const indentMarkdownLines = (
   const selectedLines = value.slice(lineStart, lineEnd);
 
   if (!outdent) {
-    const indented = selectedLines.replace(/^/gm, "  ");
+    const indented = selectedLines.replace(/^/gm, MARKDOWN_INDENT);
     const lineCount = (selectedLines.match(/^/gm) ?? []).length;
     return {
       value: value.slice(0, lineStart) + indented + value.slice(lineEnd),
-      selectionStart: selectionStart + 2,
-      selectionEnd: selectionEnd + lineCount * 2,
+      selectionStart: selectionStart + MARKDOWN_INDENT.length,
+      selectionEnd: selectionEnd + lineCount * MARKDOWN_INDENT.length,
     };
   }
 
   let removedBeforeStart = 0;
   let removedTotal = 0;
   const outdented = selectedLines.replace(
-    /^( {1,2}|\t)/gm,
+    /^( {1,4}|\t)/gm,
     (indentation, offset: number) => {
       const removed = indentation.length;
       if (lineStart + offset < selectionStart) removedBeforeStart += removed;

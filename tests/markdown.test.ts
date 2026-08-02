@@ -122,7 +122,7 @@ test("task list notation supports checked, standard unchecked and compact unchec
 });
 test("task lists retain nested list levels", () => {
   const content = (
-    parseMemo("- [ ] parent\n  - [x] child")[0] as { content: string }
+    parseMemo("- [ ] parent\n    - [x] child")[0] as { content: string }
   ).content;
   assert.match(content, /<li class="task-list-item">[\s\S]*<ul class="contains-task-list">/);
   assert.equal((content.match(/type="checkbox"/g) ?? []).length, 2);
@@ -130,7 +130,7 @@ test("task lists retain nested list levels", () => {
 test("Tab indentation indents and Shift+Tab restores selected Markdown lines", () => {
   const source = "- parent\n- child";
   const indented = indentMarkdownLines(source, 9, source.length);
-  assert.equal(indented.value, "- parent\n  - child");
+  assert.equal(indented.value, "- parent\n    - child");
   assert.deepEqual(
     indentMarkdownLines(
       indented.value,
@@ -142,9 +142,18 @@ test("Tab indentation indents and Shift+Tab restores selected Markdown lines", (
   );
 });
 test("line-start Backspace outdents one indentation level", () => {
+  assert.deepEqual(indentMarkdownLines("        - child", 8, 8, true), {
+    value: "    - child",
+    selectionStart: 4,
+    selectionEnd: 4,
+  });
+});
+test("four manually entered leading spaces equal one Tab indentation", () => {
+  const tabIndented = indentMarkdownLines("- child", 0, 7);
+  assert.equal(tabIndented.value, "    - child");
   assert.deepEqual(indentMarkdownLines("    - child", 4, 4, true), {
-    value: "  - child",
-    selectionStart: 2,
-    selectionEnd: 2,
+    value: "- child",
+    selectionStart: 0,
+    selectionEnd: 0,
   });
 });
