@@ -161,8 +161,8 @@ const blocks = computed(() => parseMemo(body.value)),
 
 .html :deep(.task-list-item-checkbox) {
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   margin: 0 9px 0 0;
   border: 1.5px solid #c5cad3;
   border-radius: 3px;
@@ -177,7 +177,7 @@ const blocks = computed(() => parseMemo(body.value)),
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2' d='m3.5 8.2 3 3 6-6.5'/%3E%3C/svg%3E");
   background-position: center;
   background-repeat: no-repeat;
-  background-size: 17px 17px;
+  background-size: 18px 18px;
 }
 .split {
   display: grid;
