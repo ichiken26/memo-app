@@ -9,6 +9,8 @@ import {
   safeUrl,
   setTaskCheckboxAt,
   toggleMarkdown,
+  toggleStrikeListAt,
+  toggleStrikeListLines,
 } from "../shared/markdown";
 test("unsafe protocols and HTML are not emitted", () => {
   assert.equal(safeUrl("javascript:alert(1)"), null);
@@ -132,6 +134,63 @@ test("setTaskCheckboxAt toggles the targeted task item in source markdown", () =
   assert.equal(
     setTaskCheckboxAt(source, 2, true),
     "- [ ] one\n- [x] two\n- [x] three",
+  );
+});
+test("setTaskCheckboxAt keeps strikethrough wrappers", () => {
+  assert.equal(
+    setTaskCheckboxAt("{- [ ] keep}", 0, true),
+    "{- [x] keep}",
+  );
+  assert.equal(
+    setTaskCheckboxAt("{- [x] keep}", 0, false),
+    "{- [ ] keep}",
+  );
+});
+test("strikethrough list notation renders with memo-strike class", () => {
+  const content = (
+    parseMemo("{- aaa}\n{- [x] done}\n{- [ ] pending}\n{- [] compact}")[0] as {
+      content: string;
+    }
+  ).content;
+  assert.equal((content.match(/memo-strike/g) ?? []).length, 4);
+  assert.equal((content.match(/data-list-index="/g) ?? []).length, 4);
+  assert.match(content, /type="checkbox"/);
+  assert.match(content, /checked=""/);
+});
+test("toggleStrikeListAt wraps and unwraps list lines", () => {
+  assert.equal(toggleStrikeListAt("- aaa\n- [ ] bbb", 0), "{- aaa}\n- [ ] bbb");
+  assert.equal(
+    toggleStrikeListAt("{- aaa}\n- [ ] bbb", 0),
+    "- aaa\n- [ ] bbb",
+  );
+  assert.equal(
+    toggleStrikeListAt("- aaa\n- [ ] bbb", 1),
+    "- aaa\n{- [ ] bbb}",
+  );
+});
+test("toggleStrikeListAt uses global index across media blocks", () => {
+  const source =
+    "- aaa\n\n![img]{w=10}(https://example.com/a.png)\n\n- bbb";
+  assert.equal(
+    toggleStrikeListAt(source, 1),
+    "- aaa\n\n![img]{w=10}(https://example.com/a.png)\n\n{- bbb}",
+  );
+  const blocks = parseMemo(source);
+  const html = blocks
+    .filter((block) => block.type === "html")
+    .map((block) => block.content)
+    .join("");
+  assert.match(html, /data-list-index="0"/);
+  assert.match(html, /data-list-index="1"/);
+});
+test("toggleStrikeListLines toggles the current editor line", () => {
+  assert.equal(
+    toggleStrikeListLines("- aaa", 0, 5).value,
+    "{- aaa}",
+  );
+  assert.equal(
+    toggleStrikeListLines("{- [x] done}", 0, 11).value,
+    "- [x] done",
   );
 });
 test("task lists retain nested list levels", () => {
