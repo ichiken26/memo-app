@@ -1,6 +1,7 @@
 import {
   insertMediaNotation,
   mediaNotation,
+  selectionIntersectsMedia,
   toggleMarkdown,
   toggleStrikeListLines,
 } from "~~/shared/markdown";
@@ -17,8 +18,9 @@ export const useMemoFormatting = (
     const el = textarea.value;
     if (!el) return;
     const start = el.selectionStart,
-      end = el.selectionEnd,
-      selection = body.value.slice(start, end) || placeholder;
+      end = el.selectionEnd;
+    if (selectionIntersectsMedia(body.value, start, end)) return;
+    const selection = body.value.slice(start, end) || placeholder;
     body.value =
       body.value.slice(0, start) +
       before +
@@ -36,6 +38,9 @@ export const useMemoFormatting = (
   const format = (kind: "bold" | "italic" | "red" | "strike") => {
     const el = textarea.value;
     if (!el) return;
+    if (selectionIntersectsMedia(body.value, el.selectionStart, el.selectionEnd)) {
+      return;
+    }
     if (kind === "red") return replaceSelection("==", "=={red}");
     if (kind === "strike") {
       const result = toggleStrikeListLines(
