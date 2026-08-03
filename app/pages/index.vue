@@ -38,7 +38,7 @@ const createStarterMemo = async () => {
   try {
     await memoStore.createMemo({
       title: "はじめてのメモ",
-      body: "# メモへようこそ\n\nこのメモはあなたのGoogleアカウント専用です。\n\n- Markdownで記述できます\n- Ctrl+Enterで保存できます\n- 右クリックから画像やリンクを挿入できます",
+      body: "# メモへようこそ\n\nこのメモはあなたのGoogleアカウント専用です。\n\n- Markdownで記述できます\n- Ctrl+Enter / ⌘+Enterで保存できます\n- 右クリックから画像やリンクを挿入できます",
       tags: [],
     });
   } finally {
@@ -100,18 +100,20 @@ const confirmMemoDelete = async () => {
         </div>
         <nav class="nav-actions" aria-label="主要ナビゲーション">
           <div data-shortcut-help-target class="global-tools-target" />
-          <NuxtLink class="button-link primary-link memo-link" to="/memo/new">
-            新規メモ
-          </NuxtLink>
-          <NuxtLink class="button-link tag-link" to="/tags">タグ一覧</NuxtLink>
-          <NuxtLink class="button-link search-link" to="/search">検索</NuxtLink>
-          <button
-            class="ghost-button logout-link"
-            type="button"
-            @click="signOut"
-          >
-            Log Out
-          </button>
+          <div class="nav-buttons">
+            <NuxtLink class="button-link primary-link memo-link" to="/memo/new">
+              新規メモ
+            </NuxtLink>
+            <NuxtLink class="button-link tag-link" to="/tags">タグ一覧</NuxtLink>
+            <NuxtLink class="button-link search-link" to="/search">検索</NuxtLink>
+            <button
+              class="ghost-button logout-link"
+              type="button"
+              @click="signOut"
+            >
+              Log Out
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -346,6 +348,12 @@ h1 {
   align-items: center;
 }
 
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .button-link {
   padding: 0 18px;
   background: var(--text);
@@ -507,11 +515,26 @@ h1 {
 
   .nav-actions {
     width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .button-link,
-  .ghost-button {
-    flex: 1;
+  .nav-actions .global-tools-target {
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  .nav-buttons {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .nav-buttons .button-link,
+  .nav-buttons .ghost-button {
+    width: 100%;
+    min-width: 0;
   }
 
   .tag-grid {

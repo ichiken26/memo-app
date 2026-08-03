@@ -184,7 +184,8 @@ a {
 .editor-header .actions button,
 .new-tag-form button,
 .tag-picker .add-button,
-.tags-shell .delete-button {
+.tags-shell .delete-button,
+.page-actions .delete-button {
   min-height: 44px !important;
   border: 1px solid var(--button-border) !important;
   border-radius: 14px !important;
@@ -194,6 +195,22 @@ a {
   font-weight: 700 !important;
   letter-spacing: 0.015em;
   text-decoration: none;
+}
+
+.page-actions .save-button,
+.page-actions .delete-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: auto;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  flex-shrink: 0;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 1 !important;
 }
 
 .google-button:hover,

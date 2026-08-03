@@ -160,11 +160,14 @@ onBeforeRouteLeave(() => {
 
     <section v-if="memo" class="memo-detail">
       <div class="detail-meta">
-        <span>更新日: {{ memo.updatedAt }}</span>
+        <span class="meta-label">更新日: {{ memo.updatedAt }}</span>
         <div class="page-actions">
-          <div data-shortcut-help-target class="global-tools-target" />
+          <div
+            data-shortcut-help-target
+            class="global-tools-target action-tools"
+          />
           <button
-            class="mode-toggle"
+            class="mode-toggle action-mode"
             type="button"
             role="switch"
             :aria-checked="viewMode === 'edit'"
@@ -174,14 +177,7 @@ onBeforeRouteLeave(() => {
             {{ viewMode === "edit" ? "編集モード" : "閲覧モード" }}
           </button>
           <button
-            class="ghost-button"
-            type="button"
-            @click="router.push('/memo/new')"
-          >
-            新規作成
-          </button>
-          <button
-            class="save-button"
+            class="save-button action-save"
             type="button"
             :disabled="isSaving"
             @click="currentDraft && saveMemo(currentDraft)"
@@ -189,7 +185,7 @@ onBeforeRouteLeave(() => {
             保存
           </button>
           <button
-            class="delete-button"
+            class="delete-button action-delete"
             type="button"
             @click="deleteCurrentMemo"
           >
@@ -293,13 +289,22 @@ a {
 }
 .save-button,
 .delete-button {
-  min-height: 36px;
-  border: 0;
-  border-radius: 8px;
-  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  border: 1px solid transparent !important;
+  border-radius: 14px !important;
+  padding: 0 14px !important;
+  box-shadow: var(--button-shadow) !important;
   color: #fff;
   cursor: pointer;
+  font-size: 14px;
   font-weight: 800;
+  line-height: 1 !important;
 }
 .save-button {
   background: var(--primary);
@@ -321,6 +326,7 @@ a {
 
 .mode-toggle {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 8px;
   border: 0;
@@ -329,6 +335,7 @@ a {
   cursor: pointer;
   font: inherit;
   font-weight: 800;
+  white-space: nowrap;
 }
 .toggle-track {
   position: relative;
@@ -352,5 +359,61 @@ a {
 }
 .mode-toggle[aria-checked="true"] .toggle-track span {
   transform: translateX(14px);
+}
+
+@media (max-width: 760px) {
+  .memo-shell {
+    padding: 18px;
+  }
+
+  .detail-meta {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .page-actions {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      ". mode ."
+      "tools save delete";
+    column-gap: 8px;
+    row-gap: 16px;
+    align-items: stretch;
+  }
+
+  .action-tools {
+    grid-area: tools;
+    align-self: center;
+  }
+
+  .action-mode {
+    grid-area: mode;
+    width: 100%;
+    min-height: 44px;
+    justify-self: stretch;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .action-save,
+  .action-delete {
+    width: 100%;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    box-sizing: border-box !important;
+    padding: 0 14px !important;
+    line-height: 1 !important;
+  }
+
+  .action-save {
+    grid-area: save;
+  }
+
+  .action-delete {
+    grid-area: delete;
+  }
 }
 </style>
