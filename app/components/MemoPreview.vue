@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { findMediaSpacingWarnings, parseMemo } from "~~/shared/markdown";
+import { findMediaSpacingWarnings, parseMemo, setTaskCheckboxAt } from "~~/shared/markdown";
 import type { Memo, MemoTag } from "~~/shared/memos";
 const props = defineProps<{
   memo?: Memo | null;
@@ -34,6 +34,32 @@ const value = computed(() => ({
 watch(value, (v) => emit("change", v), { deep: true });
 const blocks = computed(() => parseMemo(body.value)),
   warnings = computed(() => findMediaSpacingWarnings(body.value));
+
+const onPreviewCheckboxChange = (event: Event) => {
+  const target = event.target;
+  if (
+    !(target instanceof HTMLInputElement) ||
+    target.type !== "checkbox" ||
+    !target.classList.contains("task-list-item-checkbox")
+  ) {
+    return;
+  }
+
+  const preview = event.currentTarget;
+  if (!(preview instanceof HTMLElement)) {
+    return;
+  }
+
+  const checkboxes = [
+    ...preview.querySelectorAll<HTMLInputElement>(".task-list-item-checkbox"),
+  ];
+  const index = checkboxes.indexOf(target);
+  if (index < 0) {
+    return;
+  }
+
+  body.value = setTaskCheckboxAt(body.value, index, target.checked);
+};
 </script>
 <template>
   <section class="memo-workspace">
@@ -60,7 +86,11 @@ const blocks = computed(() => parseMemo(body.value)),
         v-model="body"
         @save="emit('save', value)"
       />
-      <article class="preview" aria-label="メモプレビュー">
+      <article
+        class="preview"
+        aria-label="メモプレビュー"
+        @change="onPreviewCheckboxChange"
+      >
         <template v-if="blocks.length">
           <template v-for="(block, i) in blocks" :key="i">
             <div
@@ -169,6 +199,7 @@ const blocks = computed(() => parseMemo(body.value)),
   background-color: #ffffff;
   vertical-align: -3px;
   opacity: 1;
+  cursor: pointer;
 }
 
 .html :deep(.task-list-item-checkbox:checked) {
@@ -234,8 +265,13 @@ const blocks = computed(() => parseMemo(body.value)),
   .split {
     grid-template-columns: 1fr;
   }
-  .preview {
-    border-top: 1px solid var(--border);
+
+  .split:not(.previewOnly) .preview {
+    display: none;
+  }
+
+  .previewOnly .preview {
+    border-top: 0;
     border-left: 0;
   }
 }

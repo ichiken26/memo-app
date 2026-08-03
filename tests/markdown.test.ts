@@ -7,6 +7,7 @@ import {
   mediaNotation,
   parseMemo,
   safeUrl,
+  setTaskCheckboxAt,
   toggleMarkdown,
 } from "../shared/markdown";
 test("unsafe protocols and HTML are not emitted", () => {
@@ -110,21 +111,37 @@ test("task list notation supports checked, standard unchecked and compact unchec
       content: string;
     }
   ).content;
-  assert.match(
-    content,
-    /<input[^>]*checked=""[^>]*disabled=""[^>]*type="checkbox"/,
-  );
+  assert.match(content, /<input[^>]*checked=""[^>]*type="checkbox"/);
+  assert.doesNotMatch(content, /disabled=""/);
   assert.doesNotMatch(content, /id="task-item-/);
   assert.equal((content.match(/type="checkbox"/g) ?? []).length, 3);
   assert.equal((content.match(/checked=""/g) ?? []).length, 1);
   assert.match(content, /pending/);
   assert.match(content, /compact/);
 });
+test("setTaskCheckboxAt toggles the targeted task item in source markdown", () => {
+  const source = "- [ ] one\n- [x] two\n- [] three";
+  assert.equal(
+    setTaskCheckboxAt(source, 0, true),
+    "- [x] one\n- [x] two\n- [] three",
+  );
+  assert.equal(
+    setTaskCheckboxAt(source, 1, false),
+    "- [ ] one\n- [ ] two\n- [] three",
+  );
+  assert.equal(
+    setTaskCheckboxAt(source, 2, true),
+    "- [ ] one\n- [x] two\n- [x] three",
+  );
+});
 test("task lists retain nested list levels", () => {
   const content = (
     parseMemo("- [ ] parent\n    - [x] child")[0] as { content: string }
   ).content;
-  assert.match(content, /<li class="task-list-item">[\s\S]*<ul class="contains-task-list">/);
+  assert.match(
+    content,
+    /<li class="task-list-item(?: enabled)?">[\s\S]*<ul class="contains-task-list">/,
+  );
   assert.equal((content.match(/type="checkbox"/g) ?? []).length, 2);
 });
 test("Tab indentation indents and Shift+Tab restores selected Markdown lines", () => {

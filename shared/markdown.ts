@@ -53,8 +53,27 @@ export const indentMarkdownLines = (
 };
 
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true });
-md.use(taskLists, { enabled: false, label: false, labelAfter: false });
+md.use(taskLists, { enabled: true, label: false, labelAfter: false });
 md.validateLink = (url) => safeUrl(url) !== null;
+
+export const setTaskCheckboxAt = (
+  source: string,
+  index: number,
+  checked: boolean,
+) => {
+  let count = 0;
+  return source.replace(
+    /^(\s*[-*+]\s+)\[([ xX]?)\]/gm,
+    (match, prefix: string) => {
+      if (count !== index) {
+        count += 1;
+        return match;
+      }
+      count += 1;
+      return `${prefix}[${checked ? "x" : " "}]`;
+    },
+  );
+};
 
 export const safeUrl = (value: string) => {
   try {
