@@ -1,3 +1,5 @@
+import { hasPrimaryAndAlt } from "~~/shared/shortcutKeys";
+
 export const useMemoViewMode = () => {
   const route = useRoute();
   const router = useRouter();
@@ -10,7 +12,7 @@ export const useMemoViewMode = () => {
   };
 
   const modeShortcut = (event: KeyboardEvent) => {
-    if (!event.ctrlKey || !event.altKey) return;
+    if (!hasPrimaryAndAlt(event)) return;
     if (event.key.toLowerCase() === "e") {
       event.preventDefault();
       void setMode("edit");

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { indentMarkdownLines } from "~~/shared/markdown";
+import { hasPrimaryAndAlt, hasPrimaryModifier, hasPrimaryOnly } from "~~/shared/shortcutKeys";
 
 const props = defineProps<{ modelValue: string }>();
 const apiFetch = useApiFetch();
@@ -80,13 +81,12 @@ const onFiles = (files: FileList | null) => {
   if (image) upload(image);
 };
 const keydown = (e: KeyboardEvent) => {
-  if (e.key === "Tab" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  if (e.key === "Tab" && !hasPrimaryModifier(e) && !e.altKey) {
     e.preventDefault();
     indent(e.shiftKey);
   } else if (
     e.key === "Backspace" &&
-    !e.ctrlKey &&
-    !e.metaKey &&
+    !hasPrimaryModifier(e) &&
     !e.altKey &&
     textarea.value &&
     textarea.value.selectionStart === textarea.value.selectionEnd &&
@@ -102,24 +102,16 @@ const keydown = (e: KeyboardEvent) => {
   ) {
     e.preventDefault();
     indent(true);
-  } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+  } else if (hasPrimaryModifier(e) && e.key === "Enter") {
     e.preventDefault();
     emit("save");
-  } else if (
-    (e.ctrlKey || e.metaKey) &&
-    !e.altKey &&
-    e.key.toLowerCase() === "b"
-  ) {
+  } else if (hasPrimaryOnly(e) && e.key.toLowerCase() === "b") {
     e.preventDefault();
     format("bold");
-  } else if (
-    (e.ctrlKey || e.metaKey) &&
-    !e.altKey &&
-    e.key.toLowerCase() === "i"
-  ) {
+  } else if (hasPrimaryOnly(e) && e.key.toLowerCase() === "i") {
     e.preventDefault();
     format("italic");
-  } else if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "r") {
+  } else if (hasPrimaryAndAlt(e) && e.key.toLowerCase() === "r") {
     e.preventDefault();
     format("red");
   }

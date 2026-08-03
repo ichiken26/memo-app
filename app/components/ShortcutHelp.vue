@@ -1,17 +1,22 @@
 <script setup lang="ts">
+import { formatShortcut } from "~~/shared/shortcutKeys";
+
 const route = useRoute();
 const target = shallowRef<HTMLElement | null>(null);
 const isFloating = ref(true);
 let targetObserver: MutationObserver | null = null;
 const shortcuts = computed(() => [
-  "Ctrl+Alt+S: 検索画面へ遷移",
-  "Ctrl+/: トップ画面へ遷移",
-  ...(route.path === "/search" ? ["Ctrl+Alt+L: 検索欄"] : []),
+  `${formatShortcut("Ctrl", "Alt", "S")}: 検索画面へ遷移`,
+  `${formatShortcut("Ctrl", "/")}: トップ画面へ遷移`,
+  ...(route.path === "/search"
+    ? [`${formatShortcut("Ctrl", "Alt", "L")}: 検索欄`]
+    : []),
   ...(route.path.startsWith("/memo/")
     ? [
-        "Ctrl+Alt+E / P: 編集 / 閲覧",
-        "Ctrl+B / I: 太字 / 斜体",
-        "Ctrl+Alt+R: 赤字",
+        `${formatShortcut("Ctrl", "Enter")}: 保存`,
+        `${formatShortcut("Ctrl", "Alt", "E")} / ${formatShortcut("Ctrl", "Alt", "P")}: 編集 / 閲覧`,
+        `${formatShortcut("Ctrl", "B")} / ${formatShortcut("Ctrl", "I")}: 太字 / 斜体`,
+        `${formatShortcut("Ctrl", "Alt", "R")}: 赤字`,
         "Tab / 行頭半角4スペース: 段落を下げる",
         "Shift+Tab / 行頭Backspace: 1段戻す",
       ]
@@ -42,7 +47,7 @@ onBeforeUnmount(() => targetObserver?.disconnect());
   <Teleport v-if="target" :to="target">
     <div class="shortcut-help" :class="{ floating: isFloating }">
       <ThemeToggle />
-      <AppTooltip label="ショートカット一覧">
+      <AppTooltip class="shortcut-help-tip" label="ショートカット一覧">
         <strong>この画面のショートカット</strong>
         <span v-for="shortcut in shortcuts" :key="shortcut">{{
           shortcut
@@ -70,5 +75,11 @@ onBeforeUnmount(() => targetObserver?.disconnect());
 }
 .shortcut-help :deep(.tip-body span) {
   display: block;
+}
+
+@media (max-width: 760px) {
+  .shortcut-help-tip {
+    display: none;
+  }
 }
 </style>

@@ -1,15 +1,25 @@
+import {
+  hasPrimaryAndAlt,
+  hasPrimaryOnly,
+} from "~~/shared/shortcutKeys";
+
 export const useKeyboardShortcuts = () => {
   const router = useRouter();
   const handler = (event: KeyboardEvent) => {
-    if (!event.ctrlKey) return;
-    if (event.altKey && event.key.toLowerCase() === "s") {
+    if (hasPrimaryAndAlt(event) && event.key.toLowerCase() === "s") {
       event.preventDefault();
       router.push("/search");
-    } else if (!event.altKey && event.key === "/") {
+      return;
+    }
+
+    if (hasPrimaryOnly(event) && event.key === "/") {
       event.preventDefault();
       router.push("/");
-    } else if (
-      event.altKey &&
+      return;
+    }
+
+    if (
+      hasPrimaryAndAlt(event) &&
       event.key.toLowerCase() === "l" &&
       router.currentRoute.value.path === "/search"
     ) {
