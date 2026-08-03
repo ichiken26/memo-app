@@ -2,6 +2,7 @@ import {
   insertMediaNotation,
   mediaNotation,
   toggleMarkdown,
+  toggleStrikeListLines,
 } from "~~/shared/markdown";
 
 export const useMemoFormatting = (
@@ -32,10 +33,23 @@ export const useMemoFormatting = (
       );
     });
   };
-  const format = (kind: "bold" | "italic" | "red") => {
+  const format = (kind: "bold" | "italic" | "red" | "strike") => {
     const el = textarea.value;
     if (!el) return;
     if (kind === "red") return replaceSelection("==", "=={red}");
+    if (kind === "strike") {
+      const result = toggleStrikeListLines(
+        body.value,
+        el.selectionStart,
+        el.selectionEnd,
+      );
+      body.value = result.value;
+      nextTick(() => {
+        el.focus();
+        el.setSelectionRange(result.selectionStart, result.selectionEnd);
+      });
+      return;
+    }
     const result = toggleMarkdown(
       body.value,
       el.selectionStart,

@@ -17,6 +17,7 @@ const shortcuts = computed(() => [
         `${formatShortcut("Ctrl", "Alt", "E")} / ${formatShortcut("Ctrl", "Alt", "P")}: 編集 / 閲覧`,
         `${formatShortcut("Ctrl", "B")} / ${formatShortcut("Ctrl", "I")}: 太字 / 斜体`,
         `${formatShortcut("Ctrl", "Alt", "R")}: 赤字`,
+        `${formatShortcut("Ctrl", "Alt", "Q")}: 取り消し線`,
         "Tab / 行頭半角4スペース: 段落を下げる",
         "Shift+Tab / 行頭Backspace: 1段戻す",
       ]

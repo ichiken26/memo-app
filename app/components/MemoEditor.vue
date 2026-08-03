@@ -37,7 +37,7 @@ const close = () => (menu.value.open = false);
 const context = (e: MouseEvent) => {
   menu.value = { open: true, x: e.clientX, y: e.clientY };
 };
-const applyFormat = (kind: "bold" | "italic" | "red") => {
+const applyFormat = (kind: "bold" | "italic" | "red" | "strike") => {
   format(kind);
   close();
 };
@@ -114,6 +114,9 @@ const keydown = (e: KeyboardEvent) => {
   } else if (hasPrimaryAndAlt(e) && e.key.toLowerCase() === "r") {
     e.preventDefault();
     format("red");
+  } else if (hasPrimaryAndAlt(e) && e.key.toLowerCase() === "q") {
+    e.preventDefault();
+    format("strike");
   }
 };
 const paste = (e: ClipboardEvent) => {
@@ -178,6 +181,10 @@ const paste = (e: ClipboardEvent) => {
         <span class="red">R</span>
         赤字
       </button>
+      <button @click="applyFormat('strike')">
+        <span class="strike">S</span>
+        取り消し線
+      </button>
       <button @click="choose">画像挿入</button>
       <button @click="addLink">ハイパーリンク</button>
     </div>
@@ -229,6 +236,10 @@ const paste = (e: ClipboardEvent) => {
 }
 .red {
   color: #dc2626;
+  font-weight: 800;
+}
+.strike {
+  text-decoration: line-through;
   font-weight: 800;
 }
 .uploading {

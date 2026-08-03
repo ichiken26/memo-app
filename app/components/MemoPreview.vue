@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { findMediaSpacingWarnings, parseMemo, setTaskCheckboxAt } from "~~/shared/markdown";
+import {
+  findMediaSpacingWarnings,
+  parseMemo,
+  setTaskCheckboxAt,
+  toggleStrikeListAt,
+} from "~~/shared/markdown";
 import type { Memo, MemoTag } from "~~/shared/memos";
 const props = defineProps<{
   memo?: Memo | null;
@@ -60,6 +65,38 @@ const onPreviewCheckboxChange = (event: Event) => {
 
   body.value = setTaskCheckboxAt(body.value, index, target.checked);
 };
+
+const onPreviewClick = (event: MouseEvent) => {
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  if (target.closest(".task-list-item-checkbox")) {
+    return;
+  }
+
+  const listText = target.closest<HTMLElement>(".memo-list-text");
+  if (!listText) {
+    return;
+  }
+
+  const preview = event.currentTarget;
+  if (!(preview instanceof HTMLElement)) {
+    return;
+  }
+
+  // data-list-index は html ブロックごとに 0 起点のため、プレビュー全体の DOM 順を使う
+  const listTexts = [
+    ...preview.querySelectorAll<HTMLElement>(".memo-list-text"),
+  ];
+  const index = listTexts.indexOf(listText);
+  if (index < 0) {
+    return;
+  }
+
+  event.preventDefault();
+  body.value = toggleStrikeListAt(body.value, index);
+};
 </script>
 <template>
   <section class="memo-workspace">
@@ -90,6 +127,7 @@ const onPreviewCheckboxChange = (event: Event) => {
         class="preview"
         aria-label="メモプレビュー"
         @change="onPreviewCheckboxChange"
+        @click="onPreviewClick"
       >
         <template v-if="blocks.length">
           <template v-for="(block, i) in blocks" :key="i">
@@ -200,6 +238,15 @@ const onPreviewCheckboxChange = (event: Event) => {
   vertical-align: -3px;
   opacity: 1;
   cursor: pointer;
+}
+
+.html :deep(.memo-list-text) {
+  cursor: pointer;
+}
+
+.html :deep(.memo-strike) {
+  text-decoration: line-through;
+  opacity: 0.72;
 }
 
 .html :deep(.task-list-item-checkbox:checked) {
