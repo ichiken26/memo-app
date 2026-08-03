@@ -10,6 +10,75 @@ export type MemoBlock =
 
 const MARKDOWN_INDENT = "    ";
 
+export const MEDIA_NOTATION_RE =
+  /!\[(?:img|link)\]\{[^}]*\}\(https?:\/\/[^\s)]+\)/g;
+
+const MEDIA_LINE_CORE_RE =
+  /^!\[(img|link)\]\{([^}]*)\}\((https?:\/\/[^\s)]+)\)$/;
+
+const unwrapFormatShell = (value: string): string | null => {
+  const patterns = [
+    /^\*\*(.+)\*\*$/s,
+    /^\*(.+)\*$/s,
+    /^__(.+)__$/s,
+    /^_(.+)_$/s,
+    /^`(.+)`$/s,
+    /^\{(.+)\}$/s,
+    /^==(.+)==\{red\}$/s,
+  ];
+  for (const pattern of patterns) {
+    const match = value.match(pattern);
+    if (match) {
+      return match[1]!;
+    }
+  }
+  return null;
+};
+
+export const matchMediaLine = (line: string) => {
+  let current = line.trim();
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const media = current.match(MEDIA_LINE_CORE_RE);
+    if (media) {
+      return media;
+    }
+    const next = unwrapFormatShell(current);
+    if (next === null) {
+      return null;
+    }
+    current = next.trim();
+  }
+  return null;
+};
+
+export const findMediaRanges = (source: string) => {
+  const ranges: { start: number; end: number }[] = [];
+  const pattern = new RegExp(MEDIA_NOTATION_RE.source, "g");
+  for (const match of source.matchAll(pattern)) {
+    ranges.push({
+      start: match.index,
+      end: match.index + match[0].length,
+    });
+  }
+  return ranges;
+};
+
+/** 選択範囲またはキャレットが ![img]/![link] 記法に重なるか */
+export const selectionIntersectsMedia = (
+  source: string,
+  start: number,
+  end: number,
+) => {
+  const from = Math.min(start, end);
+  const to = Math.max(start, end);
+  return findMediaRanges(source).some((range) => {
+    if (from === to) {
+      return from > range.start && from < range.end;
+    }
+    return from < range.end && to > range.start;
+  });
+};
+
 export const indentMarkdownLines = (
   value: string,
   selectionStart: number,
@@ -88,6 +157,60 @@ export const setTaskCheckboxAt = (
     .join("\n");
 };
 
+const isHorizontalRuleLine = (line: string) => /^\s*[-*+]{3,}\s*$/.test(line);
+
+const isListRelatedLine = (line: string) => {
+  if (/^(\s*)\{(\s*[-*+].+)\}\s*$/.test(line)) {
+    return true;
+  }
+  return (
+    /^(\s*)(\s*[-*+].+)\s*$/.test(line) && !isHorizontalRuleLine(line)
+  );
+};
+
+export const toggleInlineStrike = (
+  source: string,
+  start: number,
+  end: number,
+) => {
+  if (selectionIntersectsMedia(source, start, end)) {
+    return { value: source, start, end };
+  }
+  const selected = source.slice(start, end);
+  const outside =
+    start >= 1 &&
+    source[start - 1] === "{" &&
+    source[end] === "}" &&
+    !source.slice(start, end).includes("}");
+  if (outside) {
+    return {
+      value: source.slice(0, start - 1) + selected + source.slice(end + 1),
+      start: start - 1,
+      end: end - 1,
+    };
+  }
+  if (
+    selected.startsWith("{") &&
+    selected.endsWith("}") &&
+    selected.length >= 2 &&
+    !selected.slice(1, -1).includes("{") &&
+    !selected.slice(1, -1).includes("}")
+  ) {
+    const inner = selected.slice(1, -1);
+    return {
+      value: source.slice(0, start) + inner + source.slice(end),
+      start,
+      end: start + inner.length,
+    };
+  }
+  const value = selected || "テキスト";
+  return {
+    value: source.slice(0, start) + `{${value}}` + source.slice(end),
+    start: start + 1,
+    end: start + 1 + value.length,
+  };
+};
+
 export const toggleStrikeListLines = (
   value: string,
   selectionStart: number,
@@ -104,20 +227,39 @@ export const toggleStrikeListLines = (
   const lineEnd =
     nextLineBreak === -1 ? normalized.length : nextLineBreak;
   const selectedLines = normalized.slice(lineStart, lineEnd);
+  if (!selectedLines.split("\n").some(isListRelatedLine)) {
+    const result = toggleInlineStrike(
+      normalized,
+      selectionStart,
+      selectionEnd,
+    );
+    return {
+      value: result.value,
+      selectionStart: result.start,
+      selectionEnd: result.end,
+    };
+  }
   const toggled = selectedLines
     .split("\n")
     .map((line) => {
+      if (matchMediaLine(line) || findMediaRanges(line).length > 0) {
+        return line;
+      }
       const struck = line.match(/^(\s*)\{(\s*[-*+].+)\}\s*$/);
       if (struck) {
         return `${struck[1]}${struck[2]}`;
       }
       const list = line.match(/^(\s*)(\s*[-*+].+)\s*$/);
-      if (list && !/^\s*[-*+]{3,}\s*$/.test(line)) {
+      if (list && !isHorizontalRuleLine(line)) {
         return `${list[1]}{${list[2]}}`;
       }
       const indent = line.match(/^\s*/)?.[0] ?? "";
+      const struckInline = line.match(/^(\s*)\{([^{}]+)\}\s*$/);
+      if (struckInline) {
+        return `${struckInline[1]}${struckInline[2]}`;
+      }
       const text = line.trim() || "テキスト";
-      return `${indent}{- ${text}}`;
+      return `${indent}{${text}}`;
     })
     .join("\n");
 
@@ -178,8 +320,17 @@ export const safeUrl = (value: string) => {
 const renderMarkdown = (source: string, listIndexOffset = 0) => {
   const math: string[] = [];
   const redText: string[] = [];
+  const mediaText: string[] = [];
   const listItems: { struck: boolean }[] = [];
-  const normalizedSource = source
+  const withProtectedMedia = source.replace(
+    new RegExp(MEDIA_NOTATION_RE.source, "g"),
+    (match) => {
+      const token = `MEMOMEDIATOKEN${mediaText.length}END`;
+      mediaText.push(match);
+      return token;
+    },
+  );
+  const normalizedSource = withProtectedMedia
     .replace(/^(\s*[-*+]\s+)\[\](?=\s|$)/gm, "$1[ ]")
     .replace(/^(\s*\{[-*+]\s+)\[\](?=\s)/gm, "$1[ ]");
 
@@ -217,7 +368,7 @@ const renderMarkdown = (source: string, listIndexOffset = 0) => {
       return token;
     },
   );
-  const withPlaceholders = withRedPlaceholders.replace(
+  const withMathPlaceholders = withRedPlaceholders.replace(
     /\$\$([\s\S]+?)\$\$|\$([^\n$]+?)\$/g,
     (_match, display, inline) => {
       const expression = display ?? inline;
@@ -232,12 +383,35 @@ const renderMarkdown = (source: string, listIndexOffset = 0) => {
       return token;
     },
   );
+  const strikeText: string[] = [];
+  const withPlaceholders = withMathPlaceholders.replace(
+    /\{([^{}\n]+)\}/g,
+    (match, content: string) => {
+      if (content === "red") {
+        return match;
+      }
+      const token = `MEMOSTRIKETOKEN${strikeText.length}END`;
+      strikeText.push(
+        `<span class="memo-strike">${md.renderInline(content)}</span>`,
+      );
+      return token;
+    },
+  );
   let html = md.render(withPlaceholders);
   math.forEach((value, index) => {
     html = html.replaceAll(`MEMOMATHTOKEN${index}END`, value);
   });
   redText.forEach((value, index) => {
     html = html.replaceAll(`MEMOREDTOKEN${index}END`, value);
+  });
+  strikeText.forEach((value, index) => {
+    html = html.replaceAll(`MEMOSTRIKETOKEN${index}END`, value);
+  });
+  mediaText.forEach((value, index) => {
+    html = html.replaceAll(
+      `MEMOMEDIATOKEN${index}END`,
+      md.utils.escapeHtml(value),
+    );
   });
   html = html.replace(
     /MEMOLISTSTART(\d+)Z(MEMOSTRIKEMARK)?([\s\S]*?)MEMOLISTEND/g,
@@ -288,9 +462,7 @@ export const parseMemo = (source: string): MemoBlock[] => {
       blocks.push({ type: "mermaid", content: diagram.join("\n") });
       continue;
     }
-    const media = line.match(
-      /^!\[(img|link)\]\{([^}]*)\}\((https?:\/\/[^\s)]+)\)$/,
-    );
+    const media = matchMediaLine(line);
     if (media) {
       flush();
       const url = safeUrl(media[3]!);
@@ -312,8 +484,7 @@ export const parseMemo = (source: string): MemoBlock[] => {
 export const findMediaSpacingWarnings = (source: string) => {
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
   return lines.flatMap((line, index) => {
-    if (!/^!\[(?:img|link)\]\{[^}]*\}\(https?:\/\/[^\s)]+\)$/.test(line))
-      return [];
+    if (!matchMediaLine(line)) return [];
     return (index > 0 && lines[index - 1]!.trim()) ||
       (index < lines.length - 1 && lines[index + 1]!.trim())
       ? [index + 1]
@@ -344,6 +515,9 @@ export const toggleMarkdown = (
   end: number,
   marker: string,
 ) => {
+  if (selectionIntersectsMedia(source, start, end)) {
+    return { value: source, start, end };
+  }
   const selected = source.slice(start, end);
   const outside =
     start >= marker.length &&

@@ -7,7 +7,9 @@ import {
   mediaNotation,
   parseMemo,
   safeUrl,
+  selectionIntersectsMedia,
   setTaskCheckboxAt,
+  toggleInlineStrike,
   toggleMarkdown,
   toggleStrikeListAt,
   toggleStrikeListLines,
@@ -28,6 +30,37 @@ test("custom media blocks are parsed", () => {
     parseMemo("![link]{site}(https://example.com)")[0]?.type,
     "link",
   );
+});
+test("media lines ignore surrounding formatting wrappers", () => {
+  assert.equal(
+    parseMemo("**![img]{alt}(https://example.com/a.png)**")[0]?.type,
+    "image",
+  );
+  assert.equal(
+    parseMemo("{![link]{site}(https://example.com)}")[0]?.type,
+    "link",
+  );
+  assert.equal(
+    parseMemo("==![img]{alt}(https://example.com/a.png)=={red}")[0]?.type,
+    "image",
+  );
+});
+test("formatting toggles do not modify media notation", () => {
+  const media = "![img]{alt}(https://example.com/a.png)";
+  assert.equal(toggleMarkdown(media, 0, media.length, "**").value, media);
+  assert.equal(toggleInlineStrike(media, 0, media.length).value, media);
+  assert.equal(toggleStrikeListLines(media, 0, media.length).value, media);
+  assert.equal(selectionIntersectsMedia(media, 2, 5), true);
+  assert.equal(selectionIntersectsMedia(`before\n\n${media}\n\nafter`, 0, 6), false);
+});
+test("inline media notation is not rewritten by strikethrough parsing", () => {
+  const content = (
+    parseMemo("see ![img]{photo}(https://example.com/a.png) here")[0] as {
+      content: string;
+    }
+  ).content;
+  assert.match(content, /!\[img\]\{photo\}\(https:\/\/example\.com\/a\.png\)/);
+  assert.doesNotMatch(content, /memo-strike/);
 });
 test("spacing warnings identify adjacent content", () => {
   assert.deepEqual(
@@ -157,6 +190,21 @@ test("strikethrough list notation renders with memo-strike class", () => {
   assert.match(content, /type="checkbox"/);
   assert.match(content, /checked=""/);
 });
+test("inline {text} strikethrough renders without list toggle hooks", () => {
+  const content = (
+    parseMemo("hello {aaa} world")[0] as { content: string }
+  ).content;
+  assert.match(content, /<span class="memo-strike">aaa<\/span>/);
+  assert.doesNotMatch(content, /memo-list-text/);
+  assert.doesNotMatch(content, /data-list-index=/);
+});
+test("inline strikethrough coexists with red notation", () => {
+  const content = (
+    parseMemo("==alert=={red} and {old}")[0] as { content: string }
+  ).content;
+  assert.match(content, /class="memo-red"/);
+  assert.match(content, /class="memo-strike"/);
+});
 test("toggleStrikeListAt wraps and unwraps list lines", () => {
   assert.equal(toggleStrikeListAt("- aaa\n- [ ] bbb", 0), "{- aaa}\n- [ ] bbb");
   assert.equal(
@@ -183,7 +231,7 @@ test("toggleStrikeListAt uses global index across media blocks", () => {
   assert.match(html, /data-list-index="0"/);
   assert.match(html, /data-list-index="1"/);
 });
-test("toggleStrikeListLines toggles the current editor line", () => {
+test("toggleStrikeListLines toggles list lines and plain text separately", () => {
   assert.equal(
     toggleStrikeListLines("- aaa", 0, 5).value,
     "{- aaa}",
@@ -192,6 +240,13 @@ test("toggleStrikeListLines toggles the current editor line", () => {
     toggleStrikeListLines("{- [x] done}", 0, 11).value,
     "- [x] done",
   );
+  assert.equal(toggleStrikeListLines("aaa", 0, 3).value, "{aaa}");
+  assert.equal(toggleStrikeListLines("{aaa}", 0, 5).value, "aaa");
+  assert.deepEqual(toggleInlineStrike("hello aaa", 6, 9), {
+    value: "hello {aaa}",
+    start: 7,
+    end: 10,
+  });
 });
 test("task lists retain nested list levels", () => {
   const content = (
