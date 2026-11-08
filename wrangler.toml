@@ -30,3 +30,7 @@ remote = true
 [[r2_buckets]]
 binding = "MEMO_IMAGES"
 bucket_name = "memo-images"
+
+# 参照されなくなった R2 画像の定期クリーンアップ（毎日 03:00 JST）
+[triggers]
+crons = ["0 18 * * *"]
