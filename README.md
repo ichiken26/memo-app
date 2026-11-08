@@ -11,7 +11,8 @@ Nuxt 4 と Cloudflare Workers/D1 で動作するメモアプリです。Google�
 - タグ名、タグ色の編集
 - タグ作成、削除
 - Cloudflare D1 による永続化
-- Markdown入力とリアルタイムプレビュー（編集・閲覧モード）
+- GFMテーブル、コードフェンス、KaTeX数式、Mermaid図を含むMarkdownリアルタイムプレビュー
+- `?q=` の語句とタグ名を統合したAND検索
 - 太字、斜体、赤字、リンク、画像の編集メニューとショートカット
 - 画像のファイル選択、貼り付け、ドラッグ＆ドロップおよびCloudflare R2保存
 - OS設定を初期値にしたライト・ダークテーマ（右上のボタンで永続切替）
@@ -96,7 +97,7 @@ npx wrangler r2 bucket create memo-images
 npx wrangler types
 ```
 
-`wrangler.toml` の `MEMO_IMAGES` bindingを変更した場合は、必ず `npx wrangler types` を再実行してください。画像はWorker経由で配信され、Content-Type allowlist、10MB制限、推測困難なUUIDキー、`nosniff`を適用します。現在のアプリ全体と同様にUIDはクライアント入力を利用するため、本番ではCloudflare Zero TrustでWorkerへのアクセスを制限するか、Firebase IDトークン検証をAPI境界に導入してください。
+`wrangler.toml` の `MEMO_IMAGES` bindingを変更した場合は、必ず `npx wrangler types` を再実行してください。画像はWorker経由で配信され、Content-Type allowlist、ファイルシグネチャ検査、10MB制限、推測困難なUUIDキー、`nosniff`を適用します。アップロード先の所有者はFirebase IDトークンで検証したUIDから決定され、クライアントから変更できません。メモ内で共有できるよう画像のGET URLは公開ですが、アップロードは認証必須です。
 
 Cloudflare WorkersのGitHub連携では、build/deploy設定がWrangler構成と一致している必要があります。
 
@@ -132,6 +133,8 @@ npx wrangler d1 execute memo-db --remote --command "SELECT * FROM tags LIMIT 10;
 
 Firebase ConsoleでGoogle認証を有効化し、`.env` にFirebase Webアプリの公開設定を入れます。
 
+AuthenticationのAuthorized domainsには、公開ドメイン `memo.kokage-studio.com` を登録してください。
+
 ```env
 NUXT_PUBLIC_FIREBASE_API_KEY="your-firebase-api-key"
 NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
@@ -142,4 +145,4 @@ NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
 NUXT_PUBLIC_FIREBASE_MEASUREMENT_ID="your-measurement-id"
 ```
 
-現在のAPIは `ownerUid` をリクエストから受け取ります。本番でAPI保護を強める場合は、Firebase IDトークンをサーバー側で検証し、検証済み `uid` を `ownerUid` として使う構成にしてください。
+クライアントはすべてのメモ・タグ・検索・画像アップロードAPIへFirebase IDトークンをBearer tokenとして送ります。WorkerはGoogle Secure TokenのJWKでRS256署名を検証し、`issuer`、`audience`、有効期限、subjectを確認します。D1とR2の所有者には検証済みsubjectだけを使用し、bodyやqueryの `ownerUid` は信用しません。未認証・期限切れトークンは401になります。

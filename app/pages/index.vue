@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { UNTAGGED_TAG, groupMemoListByTag, type Memo } from '~~/shared/memos'
+import type { MemoListItem } from "~~/shared/memos";
 
-const memoStore = useMemoStore()
+const memoStore = useMemoStore();
+useHead({ title: "MEMO APP | メモ一覧" });
 const {
   user,
   isAuthenticated,
@@ -11,50 +12,46 @@ const {
   authError,
   signInWithGoogle,
   signOut,
-} = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+} = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
 const userMemos = computed(() =>
   user.value ? memoStore.getMemosByOwner(user.value.uid) : [],
-)
-const tagGroups = computed(() =>
-  groupMemoListByTag(userMemos.value, memoStore.tags.value),
-)
-const memoPendingDelete = ref<Memo | null>(null)
-const isCreatingStarter = ref(false)
+);
+const memoPendingDelete = ref<MemoListItem | null>(null);
+const isCreatingStarter = ref(false);
 
 const retryLoad = async () => {
   if (user.value) {
-    await memoStore.loadForOwner(user.value.uid, { force: true })
+    await memoStore.loadForOwner(user.value.uid, { force: true });
   }
-}
+};
 
 const createStarterMemo = async () => {
   if (!user.value || isCreatingStarter.value) {
-    return
+    return;
   }
 
-  isCreatingStarter.value = true
+  isCreatingStarter.value = true;
   try {
     await memoStore.createMemo({
-      ownerUid: user.value.uid,
-      title: 'はじめてのメモ',
-      body: '# メモへようこそ\n\nこのメモはあなたのGoogleアカウント専用です。\n\n- Markdownで記述できます\n- Ctrl+Enterで保存できます\n- 右クリックから画像やリンクを挿入できます',
+      title: "はじめてのメモ",
+      body: "# メモへようこそ\n\nこのメモはあなたのGoogleアカウント専用です。\n\n- Markdownで記述できます\n- Ctrl+Enter / ⌘+Enterで保存できます\n- 右クリックから画像やリンクを挿入できます",
       tags: [],
-    })
+    });
   } finally {
-    isCreatingStarter.value = false
+    isCreatingStarter.value = false;
   }
-}
+};
 
 const confirmMemoDelete = async () => {
   if (!user.value || !memoPendingDelete.value) {
-    return
+    return;
   }
 
-  await memoStore.deleteMemo(memoPendingDelete.value.id, user.value.uid)
-  memoPendingDelete.value = null
-}
+  await memoStore.deleteMemo(memoPendingDelete.value.id);
+  memoPendingDelete.value = null;
+};
 </script>
 
 <template>
@@ -76,10 +73,10 @@ const confirmMemoDelete = async () => {
           <span class="google-mark">G</span>
           {{
             !isConfigured
-              ? 'Firebase設定が必要です'
+              ? "Firebase設定が必要です"
               : isReady
-                ? 'Google でログイン'
-                : '認証状態を確認中'
+                ? "Google でログイン"
+                : "認証状態を確認中"
           }}
         </button>
         <p v-if="!isConfigured" class="auth-error">
@@ -96,22 +93,25 @@ const confirmMemoDelete = async () => {
           <TopLogoLink />
           <div>
             <p class="eyebrow">Memo Workspace</p>
-            <h1>タグ別メモ一覧</h1>
+            <h1>最近更新したメモ</h1>
           </div>
         </div>
         <nav class="nav-actions" aria-label="主要ナビゲーション">
-          <NuxtLink class="button-link primary-link memo-link" to="/memo/new">
-            新規メモ
-          </NuxtLink>
-          <NuxtLink class="button-link tag-link" to="/tags">タグ一覧</NuxtLink>
-          <NuxtLink class="button-link search-link" to="/search">検索</NuxtLink>
-          <button
-            class="ghost-button logout-link"
-            type="button"
-            @click="signOut"
-          >
-            Log Out
-          </button>
+          <div data-shortcut-help-target class="global-tools-target" />
+          <div class="nav-buttons">
+            <NuxtLink class="button-link primary-link memo-link" to="/memo/new">
+              新規メモ
+            </NuxtLink>
+            <NuxtLink class="button-link tag-link" to="/tags">タグ一覧</NuxtLink>
+            <NuxtLink class="button-link search-link" to="/search">検索</NuxtLink>
+            <button
+              class="ghost-button logout-link"
+              type="button"
+              @click="signOut"
+            >
+              Log Out
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -162,45 +162,16 @@ const confirmMemoDelete = async () => {
           :disabled="isCreatingStarter"
           @click="createStarterMemo"
         >
-          {{ isCreatingStarter ? '作成中…' : 'サンプルメモを作成' }}
+          {{ isCreatingStarter ? "作成中…" : "サンプルメモを作成" }}
         </button>
       </section>
 
-      <section v-else class="tag-grid" aria-label="タグごとのメモプレビュー">
-        <article
-          v-for="group in tagGroups"
-          :key="group.tag.id"
-          class="tag-section"
-        >
-          <div
-            v-if="group.tag.id === UNTAGGED_TAG.id"
-            class="tag-heading untagged-heading"
-          >
-            <span
-              class="tag-dot"
-              :style="{ backgroundColor: group.tag.color }"
-            />
-            <span>{{ group.tag.name }}</span>
-            <span class="count">{{ group.memos.length }}</span>
-          </div>
-          <NuxtLink
-            v-else
-            class="tag-heading"
-            :to="`/tag/${group.tag.id}?tag=${encodeURIComponent(group.tag.name)}`"
-          >
-            <span
-              class="tag-dot"
-              :style="{ backgroundColor: group.tag.color }"
-            />
-            <span>{{ group.tag.name }}</span>
-            <span class="count">{{ group.memos.length }}</span>
-          </NuxtLink>
-
-          <MemoPreviewList
-            class="memo-list"
-            :memos="group.memos"
-            @delete="(memo) => (memoPendingDelete = memo)"
-          />
+      <section v-else class="tag-grid" aria-label="最近更新したメモ">
+        <article class="tag-section">
+          <MemoPreviewList class="memo-list" :memos="userMemos" @delete="(memo) => (memoPendingDelete = memo)" />
+          <button v-if="memoStore.hasMore.value" class="ghost-button" type="button" :disabled="memoStore.isLoading.value" @click="memoStore.loadMore">
+            {{ memoStore.isLoading.value ? "読み込み中…" : "さらに読み込む" }}
+          </button>
         </article>
       </section>
 
@@ -230,7 +201,7 @@ const confirmMemoDelete = async () => {
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
-    'Segoe UI',
+    "Segoe UI",
     sans-serif;
 }
 
@@ -262,7 +233,7 @@ a {
 .eyebrow {
   margin: 0 0 8px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -320,7 +291,7 @@ h1 {
 .auth-error {
   margin: 14px 0 0;
   color: #b91c1c;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.5;
 }
@@ -346,6 +317,12 @@ h1 {
   align-items: center;
 }
 
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .button-link {
   padding: 0 18px;
   background: var(--text);
@@ -353,11 +330,11 @@ h1 {
 }
 
 .memo-link {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tag-link {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .search-link {
@@ -507,11 +484,26 @@ h1 {
 
   .nav-actions {
     width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .button-link,
-  .ghost-button {
-    flex: 1;
+  .nav-actions .global-tools-target {
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  .nav-buttons {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .nav-buttons .button-link,
+  .nav-buttons .ghost-button {
+    width: 100%;
+    min-width: 0;
   }
 
   .tag-grid {

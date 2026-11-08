@@ -1,8 +1,8 @@
-import { getDb, listTagsByOwner } from '../utils/d1'
-import { requireQueryString } from '../utils/request'
+import { getDb, listTagsByOwner } from "../utils/d1";
+import { requireFirebaseUser } from "../utils/firebaseAuth";
 
 export default defineEventHandler(async (event) => {
-  const ownerUid = requireQueryString(event, 'ownerUid')
+  const { uid: ownerUid } = await requireFirebaseUser(event);
 
-  return { tags: await listTagsByOwner(getDb(event), ownerUid) }
-})
+  return { tags: await listTagsByOwner(getDb(event), ownerUid) };
+});

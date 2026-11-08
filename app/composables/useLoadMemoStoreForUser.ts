@@ -1,8 +1,8 @@
-import type { Ref } from 'vue'
+import type { Ref } from "vue";
 
 type AuthUser = {
-  uid: string
-}
+  uid: string;
+};
 
 export const useLoadMemoStoreForUser = (
   user: Ref<AuthUser | null>,
@@ -12,11 +12,11 @@ export const useLoadMemoStoreForUser = (
     () => user.value?.uid,
     (ownerUid) => {
       if (ownerUid) {
-        void memoStore.loadForOwner(ownerUid)
+        void memoStore.loadForOwner(ownerUid);
       }
     },
     { immediate: true },
-  )
+  );
 
-  return memoStore
-}
+  return memoStore;
+};

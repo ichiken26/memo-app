@@ -1,12 +1,12 @@
 <script setup lang="ts">
-const props = defineProps<{ title: string; url: string }>()
+const props = defineProps<{ title: string; url: string }>();
 const host = computed(() => {
   try {
-    return new URL(props.url).hostname
+    return new URL(props.url).hostname;
   } catch {
-    return props.url
+    return props.url;
   }
-})
+});
 </script>
 <template>
   <a class="link-card" :href="url" target="_blank" rel="noopener noreferrer">
@@ -41,7 +41,7 @@ const host = computed(() => {
 .link-copy span {
   overflow: hidden;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

@@ -1,144 +1,179 @@
 <script setup lang="ts">
-import type { MemoTag } from '~~/shared/memos'
+import type { MemoTag } from "~~/shared/memos";
 
-const route = useRoute()
-const router = useRouter()
-const memoStore = useMemoStore()
-const { user } = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+const route = useRoute();
+const router = useRouter();
+const memoStore = useMemoStore();
+const { user, isReady } = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
-const memoId = computed(() => String(route.params.id))
+const memoId = computed(() => String(route.params.id));
 const memo = computed(() =>
   user.value ? memoStore.findMemoForOwner(memoId.value, user.value.uid) : null,
-)
-const saveStatus = ref('保存済み')
-const hasUnsavedChanges = ref(false)
-const isSaving = ref(false)
-const isDeleteModalOpen = ref(false)
-const viewMode = computed<'edit' | 'preview'>(() =>
-  route.query.mode === 'preview' ? 'preview' : 'edit',
-)
-const setMode = async (mode: 'edit' | 'preview') => {
-  if (import.meta.client) localStorage.setItem('memo-view-mode', mode)
-  await router.replace({ query: { ...route.query, mode } })
-}
-let saveTimer: ReturnType<typeof setTimeout> | null = null
+);
+const isMemoLoading = computed(
+  () =>
+    !isReady.value ||
+    Boolean(user.value && memoStore.detailLoadingById.value[memoId.value]),
+);
+watch(
+  [() => user.value?.uid, memoId],
+  async ([ownerUid, id]) => {
+    if (!ownerUid || !id) return;
+    try { await memoStore.loadDetail(id, ownerUid); }
+    catch { /* The store exposes the per-ID error for rendering and retry. */ }
+  },
+  { immediate: true },
+);
+const saveStatus = ref("保存済み");
+const hasUnsavedChanges = ref(false);
+const isSaving = ref(false);
+const { viewMode, setMode } = useMemoViewMode();
+const currentDraft = ref<{
+  title: string;
+  body: string;
+  tags: MemoTag[];
+} | null>(null);
+watch(
+  memo,
+  (value) => {
+    if (value && !currentDraft.value) {
+      currentDraft.value = {
+        title: value.title,
+        body: value.body,
+        tags: value.tags.map((tag) => ({ ...tag })),
+      };
+    }
+  },
+  { immediate: true },
+);
+// タブ名は編集中のタイトルに追従させる（未入力時はプレースホルダー）
+useHead(() => {
+  if (!memo.value) {
+    return {
+      title: isMemoLoading.value ? "読み込み中…" : "メモが見つかりません",
+    };
+  }
+  const title = (currentDraft.value?.title ?? memo.value.title).trim();
+  return { title: title || "無題のメモ" };
+});
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let changeVersion = 0;
 
-const saveMemo = async (value: {
-  title: string
-  body: string
-  tags: MemoTag[]
-}) => {
+const saveMemo = async (
+  value: { title: string; body: string; tags: MemoTag[] },
+  version = changeVersion,
+) => {
   if (saveTimer) {
-    clearTimeout(saveTimer)
-    saveTimer = null
+    clearTimeout(saveTimer);
+    saveTimer = null;
   }
-  isSaving.value = true
-  saveStatus.value = '保存中...'
-  if (user.value) {
-    await memoStore.updateMemo(memoId.value, {
-      ...value,
-      ownerUid: user.value.uid,
-    })
+  isSaving.value = true;
+  saveStatus.value = "保存中...";
+  try {
+    if (user.value) {
+      await memoStore.updateMemo(memoId.value, value);
+    }
+    if (version !== changeVersion) {
+      return;
+    }
+    hasUnsavedChanges.value = false;
+    saveStatus.value = "保存済み";
+  } catch (error) {
+    hasUnsavedChanges.value = true;
+    saveStatus.value =
+      error instanceof Error
+        ? `保存失敗: ${error.message}`
+        : "保存に失敗しました";
+  } finally {
+    isSaving.value = false;
   }
-  hasUnsavedChanges.value = false
-  isSaving.value = false
-  saveStatus.value = '保存済み'
-}
+};
 
 const queueAutoSave = (value: {
-  title: string
-  body: string
-  tags: MemoTag[]
+  title: string;
+  body: string;
+  tags: MemoTag[];
 }) => {
+  currentDraft.value = value;
   if (!memo.value) {
-    return
+    return;
   }
 
-  hasUnsavedChanges.value = true
-  saveStatus.value = '未保存の変更あり'
+  hasUnsavedChanges.value = true;
+  changeVersion += 1;
+  const version = changeVersion;
+  saveStatus.value = "未保存の変更あり";
   if (saveTimer) {
-    clearTimeout(saveTimer)
+    clearTimeout(saveTimer);
   }
-  saveTimer = setTimeout(() => saveMemo(value), 1000)
-}
+  saveTimer = setTimeout(() => saveMemo(value, version), 1000);
+};
 
 const createAndSelectTag = async (
   name: string,
   selectTag: (tag: MemoTag) => void,
 ) => {
   if (user.value) {
-    const tag = await memoStore.createTag(user.value.uid, name)
+    const tag = await memoStore.createTag(name);
     if (tag) {
-      selectTag(tag)
+      selectTag(tag);
     }
   }
-}
+};
 
 const deleteCurrentMemo = async () => {
   if (!user.value || !memo.value) {
-    return
+    return;
+  }
+  if (
+    !window.confirm(
+      `「${memo.value.title}」を削除します。この操作は元に戻せません。`,
+    )
+  ) {
+    return;
   }
 
   if (saveTimer) {
-    clearTimeout(saveTimer)
-    saveTimer = null
+    clearTimeout(saveTimer);
+    saveTimer = null;
   }
 
-  hasUnsavedChanges.value = false
-  isSaving.value = false
-  await memoStore.deleteMemo(memo.value.id, user.value.uid)
-  isDeleteModalOpen.value = false
-  await router.push('/')
-}
+  hasUnsavedChanges.value = false;
+  isSaving.value = false;
+  await memoStore.deleteMemo(memo.value.id);
+  await router.push("/");
+};
 
 const warnBeforeUnload = (event: BeforeUnloadEvent) => {
   if (!hasUnsavedChanges.value && !isSaving.value) {
-    return
+    return;
   }
 
-  event.preventDefault()
-  event.returnValue = ''
-}
+  event.preventDefault();
+  event.returnValue = "";
+};
 
 onMounted(() => {
-  window.addEventListener('beforeunload', warnBeforeUnload)
-  if (!route.query.mode)
-    setMode(
-      localStorage.getItem('memo-view-mode') === 'preview' ? 'preview' : 'edit',
-    )
-  window.addEventListener('keydown', modeShortcut)
-})
-
-const modeShortcut = (event: KeyboardEvent) => {
-  if (!event.ctrlKey || !event.altKey) return
-  if (event.key.toLowerCase() === 'e') {
-    event.preventDefault()
-    setMode('edit')
-  }
-  if (event.key.toLowerCase() === 'p') {
-    event.preventDefault()
-    setMode('preview')
-  }
-}
+  window.addEventListener("beforeunload", warnBeforeUnload);
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', warnBeforeUnload)
-  window.removeEventListener('keydown', modeShortcut)
+  window.removeEventListener("beforeunload", warnBeforeUnload);
   if (saveTimer) {
-    clearTimeout(saveTimer)
+    clearTimeout(saveTimer);
   }
-})
+});
 
 onBeforeRouteLeave(() => {
   if (!hasUnsavedChanges.value && !isSaving.value) {
-    return true
+    return true;
   }
 
   return window.confirm(
-    '保存が完了していない変更があります。ページを離れますか？',
-  )
-})
+    "保存が完了していない変更があります。ページを離れますか？",
+  );
+});
 </script>
 
 <template>
@@ -149,57 +184,74 @@ onBeforeRouteLeave(() => {
 
     <section v-if="memo" class="memo-detail">
       <div class="detail-meta">
-        <span>更新日: {{ memo.updatedAt }}</span>
-        <div>
+        <span class="meta-label">更新日: {{ memo.updatedAt }}</span>
+        <div class="page-actions">
+          <div
+            data-shortcut-help-target
+            class="global-tools-target action-tools"
+          />
           <button
-            class="ghost-button"
+            class="mode-toggle action-mode"
             type="button"
+            role="switch"
+            :aria-checked="viewMode === 'edit'"
             @click="setMode(viewMode === 'edit' ? 'preview' : 'edit')"
           >
-            {{ viewMode === 'edit' ? '閲覧モード' : '編集モード' }}
+            <span class="toggle-track" aria-hidden="true"><span /></span>
+            {{ viewMode === "edit" ? "編集モード" : "閲覧モード" }}
           </button>
           <button
-            class="ghost-button"
+            class="save-button action-save"
             type="button"
-            @click="router.push('/memo/new')"
+            :disabled="isSaving"
+            @click="currentDraft && saveMemo(currentDraft)"
           >
-            新規作成
+            保存
+          </button>
+          <button
+            class="delete-button action-delete"
+            type="button"
+            @click="deleteCurrentMemo"
+          >
+            削除
           </button>
         </div>
       </div>
       <MemoPreview
+        class="memo-preview-workspace"
         :key="memo.id"
         editor-mode="edit"
         :view-mode="viewMode"
-        :owner-uid="user?.uid"
         :memo="memo"
         :available-tags="memoStore.tags.value"
         :save-status="saveStatus"
+        :header-actions="false"
         @change="queueAutoSave"
         @save="saveMemo"
-        @delete="isDeleteModalOpen = true"
+        @delete="deleteCurrentMemo"
         @create-tag="createAndSelectTag"
       />
+    </section>
 
-      <ConfirmDeleteModal
-        :open="isDeleteModalOpen"
-        title="メモを削除"
-        :message="`「${memo.title}」を削除します。この操作は元に戻せません。`"
-        @cancel="isDeleteModalOpen = false"
-        @confirm="deleteCurrentMemo"
-      />
+    <section v-else-if="isMemoLoading" class="missing" aria-live="polite">
+      <h1>メモを読み込んでいます</h1>
     </section>
 
     <section v-else class="missing">
       <h1>メモが見つかりません</h1>
-      <p>指定されたメモ ID に一致するメモはありません。</p>
+      <p>{{ memoStore.detailErrorById.value[memoId] ?? "指定されたメモ ID に一致するメモはありません。" }}</p>
+      <button v-if="user" type="button" @click="memoStore.loadDetail(memoId, user.uid, { force: true })">再試行</button>
     </section>
   </main>
 </template>
 
 <style scoped>
 .memo-shell {
-  min-height: 100vh;
+  display: flex;
+  height: 100dvh;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   padding: 28px;
@@ -211,7 +263,12 @@ a {
 }
 
 .memo-header {
-  max-width: 820px;
+  flex: 0 0 auto;
+  display: flex;
+  width: 100%;
+  max-width: 1066px;
+  min-height: 48px;
+  align-items: center;
   margin: 0 auto;
 }
 
@@ -225,8 +282,18 @@ a {
 }
 
 .memo-detail {
-  max-width: 820px;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  max-width: 1066px;
   margin: 16px auto 0;
+}
+
+.memo-preview-workspace {
+  min-height: 0;
+  flex: 1;
 }
 
 .detail-meta {
@@ -236,8 +303,43 @@ a {
   gap: 12px;
   margin-bottom: 10px;
   color: #6b7280;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-actions .global-tools-target {
+  margin-left: 0;
+}
+.save-button,
+.delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  border: 1px solid transparent !important;
+  border-radius: 14px !important;
+  padding: 0 14px !important;
+  box-shadow: var(--button-shadow) !important;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1 !important;
+}
+.save-button {
+  background: var(--primary);
+}
+.delete-button {
+  background: var(--button-danger);
 }
 
 .ghost-button {
@@ -249,5 +351,98 @@ a {
   cursor: pointer;
   font-weight: 800;
   padding: 0 12px;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.toggle-track {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--muted);
+}
+.toggle-track span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s ease;
+}
+.mode-toggle[aria-checked="true"] .toggle-track {
+  background: var(--primary);
+}
+.mode-toggle[aria-checked="true"] .toggle-track span {
+  transform: translateX(14px);
+}
+
+@media (max-width: 760px) {
+  .memo-shell {
+    padding: 18px;
+  }
+
+  .detail-meta {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .page-actions {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      ". mode ."
+      "tools save delete";
+    column-gap: 8px;
+    row-gap: 16px;
+    align-items: stretch;
+  }
+
+  .action-tools {
+    grid-area: tools;
+    align-self: center;
+  }
+
+  .action-mode {
+    grid-area: mode;
+    width: 100%;
+    min-height: 44px;
+    justify-self: stretch;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .action-save,
+  .action-delete {
+    width: 100%;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    box-sizing: border-box !important;
+    padding: 0 14px !important;
+    line-height: 1 !important;
+  }
+
+  .action-save {
+    grid-area: save;
+  }
+
+  .action-delete {
+    grid-area: delete;
+  }
 }
 </style>

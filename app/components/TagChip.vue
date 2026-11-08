@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import type { MemoTag } from '~~/shared/memos'
+import type { MemoTag } from "~~/shared/memos";
 
 withDefaults(
   defineProps<{
-    tag: MemoTag
-    removable?: boolean
-    asLink?: boolean
+    tag: MemoTag;
+    removable?: boolean;
+    asLink?: boolean;
   }>(),
   {
     removable: false,
-    asLink: true
-  }
-)
+    asLink: true,
+  },
+);
 
 const emit = defineEmits<{
-  (event: 'remove', tag: MemoTag): void
-}>()
+  (event: "remove", tag: MemoTag): void;
+}>();
 </script>
 
 <template>
@@ -33,7 +33,13 @@ const emit = defineEmits<{
       <span class="chip-dot" :style="{ backgroundColor: tag.color }" />
       <span>{{ tag.name }}</span>
     </span>
-    <button v-if="removable" class="remove-button" type="button" :aria-label="`${tag.name} を外す`" @click="emit('remove', tag)">
+    <button
+      v-if="removable"
+      class="remove-button"
+      type="button"
+      :aria-label="`${tag.name} を外す`"
+      @click="emit('remove', tag)"
+    >
       x
     </button>
   </span>
@@ -55,7 +61,7 @@ const emit = defineEmits<{
   padding: 4px 9px;
   background: var(--bg);
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -75,7 +81,7 @@ const emit = defineEmits<{
   background: var(--panel);
   color: var(--muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
 }
 </style>

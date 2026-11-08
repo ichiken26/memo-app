@@ -1,4 +1,7 @@
-<script setup lang="ts">useTheme(); useKeyboardShortcuts()</script>
+<script setup lang="ts">
+useTheme();
+useKeyboardShortcuts();
+</script>
 <template>
   <NuxtRouteAnnouncer />
   <ShortcutHelp />

@@ -1,65 +1,132 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { searchMemos, type Memo } from '~~/shared/memos'
+import { computed, ref } from "vue";
+import type { MemoListItem } from "~~/shared/memos";
 
-const route = useRoute()
-const router = useRouter()
-const memoStore = useMemoStore()
-const { user } = useFirebaseAuth()
-useLoadMemoStoreForUser(user, memoStore)
+const route = useRoute();
+useHead({ title: "MEMO APP | 検索" });
+const router = useRouter();
+const memoStore = useMemoStore();
+const { user } = useFirebaseAuth();
+useLoadMemoStoreForUser(user, memoStore);
 
-const userMemos = computed(() => (user.value ? memoStore.getMemosByOwner(user.value.uid) : []))
+const histories = ref(["認証", "タグ検索", "Nuxt", "API"]);
+const searchWord = ref("");
+const selectedTagIds = ref<string[]>([]);
+const isSyncingFromQuery = ref(false);
 
-const histories = ref(['認証', 'タグ検索', 'Nuxt', 'API'])
-const searchWord = ref(String(route.query.search_word ?? ''))
-const selectedTagIds = ref<string[]>(
-  typeof route.query.tag === 'string'
-    ? route.query.tag
-        .split(',')
-        .map((tagName) => memoStore.tags.value.find((tag) => tag.name === tagName)?.id)
-        .filter((tagId): tagId is string => Boolean(tagId))
-    : []
-)
+const selectedTags = computed(() =>
+  memoStore.tags.value.filter((tag) => selectedTagIds.value.includes(tag.id)),
+);
+const memoPendingDelete = ref<MemoListItem | null>(null);
+const directResults = ref<MemoListItem[]>([]);
+const apiFetch = useApiFetch();
+const searchCursor = ref<string | null>(null);
+const searchHasMore = ref(false);
+const results = computed(() => directResults.value);
+const runSearch = async (append = false) => {
+  if (!user.value) return;
+  const response = await apiFetch<{ results: MemoListItem[]; nextCursor: string | null; hasMore: boolean }>("/api/search", { method: "POST", body: { search_word: searchWord.value, tags: selectedTags.value.map(({ id, name }) => ({ id, name })), ...(append && searchCursor.value ? { cursor: searchCursor.value } : {}) } });
+  const combined = append ? [...directResults.value, ...response.results] : response.results;
+  directResults.value = [...new Map(combined.map((memo) => [memo.id, memo])).values()];
+  searchCursor.value = response.nextCursor; searchHasMore.value = response.hasMore;
+};
 
-const selectedTags = computed(() => memoStore.tags.value.filter((tag) => selectedTagIds.value.includes(tag.id)))
-const memoPendingDelete = ref<Memo | null>(null)
-const results = computed(() =>
-  searchMemos({
-    searchWord: searchWord.value,
-    tags: selectedTags.value.map(({ id, name }) => ({ id, name })),
-    memos: userMemos.value,
-    ownerUid: user.value?.uid
-  })
-)
+const getQueryTokens = () =>
+  String(route.query.q ?? route.query.search_word ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+const syncStateFromQuery = async () => {
+  const tokens = getQueryTokens();
+  const tokenNames = new Set(tokens.map((token) => token.toLocaleLowerCase()));
+  const matchedTags = memoStore.tags.value.filter((tag) =>
+    tokenNames.has(tag.name.toLocaleLowerCase()),
+  );
+  const matchedNames = new Set(
+    matchedTags.map((tag) => tag.name.toLocaleLowerCase()),
+  );
+
+  isSyncingFromQuery.value = true;
+  selectedTagIds.value = matchedTags.map((tag) => tag.id);
+  searchWord.value = tokens
+    .filter((token) => !matchedNames.has(token.toLocaleLowerCase()))
+    .join(" ");
+  await nextTick();
+  isSyncingFromQuery.value = false;
+};
+
+watch(
+  [
+    () => route.query.q,
+    () => route.query.search_word,
+    () => memoStore.tags.value,
+  ],
+  syncStateFromQuery,
+  { immediate: true, deep: true },
+);
+
+const canonicalQuery = () =>
+  [
+    ...searchWord.value.trim().split(/\s+/).filter(Boolean),
+    ...selectedTags.value.map((tag) => tag.name),
+  ]
+    .filter(
+      (value, index, values) =>
+        values.findIndex(
+          (candidate) =>
+            candidate.toLocaleLowerCase() === value.toLocaleLowerCase(),
+        ) === index,
+    )
+    .join(" ");
+
+watch(
+  [searchWord, selectedTagIds],
+  async () => {
+    if (isSyncingFromQuery.value) return;
+    directResults.value = [];
+    const q = canonicalQuery();
+    const currentQuery = String(route.query.q ?? "").trim();
+    if (currentQuery === q && route.query.search_word === undefined) return;
+    await router.replace({ path: "/search", query: q ? { q } : {} });
+  },
+  { deep: true, flush: "post" },
+);
 
 const submitSearch = async () => {
-  const trimmedWord = searchWord.value.trim()
+  directResults.value = [];
+  const trimmedWord = searchWord.value.trim();
   if (trimmedWord && !histories.value.includes(trimmedWord)) {
-    histories.value = [trimmedWord, ...histories.value].slice(0, 5)
+    histories.value = [trimmedWord, ...histories.value].slice(0, 5);
   }
 
   await router.push({
-    path: '/search',
+    path: "/search",
     query: {
-      ...(selectedTags.value.length > 0 ? { tag: selectedTags.value.map((tag) => tag.name).join(',') } : {}),
-      ...(trimmedWord ? { search_word: trimmedWord } : {})
-    }
-  })
-}
+      ...(trimmedWord || selectedTags.value.length
+        ? {
+            q: canonicalQuery(),
+          }
+        : {}),
+    },
+  });
+};
+
+watch([() => user.value?.uid, searchWord, selectedTagIds], () => void runSearch(), { immediate: true, deep: true, flush: "post" });
 
 const applyHistory = (word: string) => {
-  searchWord.value = word
-  submitSearch()
-}
+  searchWord.value = word;
+  submitSearch();
+};
 
 const confirmMemoDelete = async () => {
   if (!user.value || !memoPendingDelete.value) {
-    return
+    return;
   }
 
-  await memoStore.deleteMemo(memoPendingDelete.value.id, user.value.uid)
-  memoPendingDelete.value = null
-}
+  await memoStore.deleteMemo(memoPendingDelete.value.id);
+  memoPendingDelete.value = null;
+};
 </script>
 
 <template>
@@ -70,6 +137,7 @@ const confirmMemoDelete = async () => {
         <p class="eyebrow">Search</p>
         <h1>メモ検索</h1>
       </div>
+      <div data-shortcut-help-target class="global-tools-target" />
     </header>
 
     <SearchPanel
@@ -82,7 +150,12 @@ const confirmMemoDelete = async () => {
       @apply-history="applyHistory"
     />
 
-    <SearchResults class="result-area" :results="results" @delete="(memo) => memoPendingDelete = memo" />
+    <SearchResults
+      class="result-area"
+      :results="results"
+      @delete="(memo) => (memoPendingDelete = memo)"
+    />
+    <button v-if="searchHasMore" class="submit-button result-area" type="button" @click="runSearch(true)">さらに読み込む</button>
 
     <ConfirmDeleteModal
       :open="Boolean(memoPendingDelete)"
@@ -99,7 +172,14 @@ const confirmMemoDelete = async () => {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   padding: 28px;
 }
 
@@ -126,7 +206,7 @@ a {
 .eyebrow {
   margin: 0 0 4px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;

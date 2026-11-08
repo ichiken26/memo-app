@@ -1,94 +1,148 @@
 <script setup lang="ts">
-const props = defineProps<{ modelValue: string; ownerUid?: string }>()
+import { indentMarkdownLines } from "~~/shared/markdown";
+import {
+  hasPrimaryAndAlt,
+  hasPrimaryModifier,
+  hasPrimaryOnly,
+  isLetterShortcutKey,
+} from "~~/shared/shortcutKeys";
+
+const props = defineProps<{ modelValue: string }>();
+const apiFetch = useApiFetch();
 const emit = defineEmits<{
-  (e: 'update:modelValue', v: string): void
-  (e: 'save'): void
-}>()
+  (e: "update:modelValue", v: string): void;
+  (e: "save"): void;
+}>();
 const body = computed({
   get: () => props.modelValue,
-  set: (v) => emit('update:modelValue', v),
-})
+  set: (v) => emit("update:modelValue", v),
+});
 const textarea = ref<HTMLTextAreaElement | null>(null),
   menu = ref({ open: false, x: 0, y: 0 }),
   file = ref<HTMLInputElement | null>(null),
-  uploading = ref(false)
-const { format, insertMedia } = useMemoFormatting(body, textarea)
-const close = () => (menu.value.open = false)
+  uploading = ref(false);
+const uploadError = ref("");
+const { format, insertMedia } = useMemoFormatting(body, textarea);
+const indent = (outdent = false) => {
+  const el = textarea.value;
+  if (!el) return;
+  const result = indentMarkdownLines(
+    el.value,
+    el.selectionStart,
+    el.selectionEnd,
+    outdent,
+  );
+  body.value = result.value;
+  nextTick(() => {
+    el.focus();
+    el.setSelectionRange(result.selectionStart, result.selectionEnd);
+  });
+};
+const close = () => (menu.value.open = false);
 const context = (e: MouseEvent) => {
-  menu.value = { open: true, x: e.clientX, y: e.clientY }
-}
-const applyFormat = (kind: 'bold' | 'italic' | 'red') => {
-  format(kind)
-  close()
-}
+  menu.value = { open: true, x: e.clientX, y: e.clientY };
+};
+const applyFormat = (kind: "bold" | "italic" | "red" | "strike") => {
+  format(kind);
+  close();
+};
 const addLink = () => {
   const selected =
     textarea.value?.value.slice(
       textarea.value.selectionStart,
       textarea.value.selectionEnd,
-    ) || 'リンク'
-  const url = window.prompt('リンクURL (https://)')
-  if (url && /^https?:\/\//.test(url)) insertMedia('link', selected, url)
-  close()
-}
+    ) || "リンク";
+  const url = window.prompt("リンクURL (https://)");
+  if (url && /^https?:\/\//.test(url)) insertMedia("link", selected, url);
+  close();
+};
 const upload = async (blob: File) => {
-  if (!blob.type.startsWith('image/')) return
-  uploading.value = true
+  if (!blob.type.startsWith("image/")) return;
+  uploading.value = true;
+  uploadError.value = "";
   try {
-    const form = new FormData()
-    form.append('image', blob)
-    if (props.ownerUid) form.append('ownerUid', props.ownerUid)
-    const result = await $fetch<{ url: string }>('/api/images', {
-      method: 'POST',
+    const form = new FormData();
+    form.append("image", blob);
+    const result = await apiFetch<{ url: string }>("/api/images", {
+      method: "POST",
       body: form,
-    })
-    insertMedia('img', blob.name || '画像', result.url)
+    });
+    insertMedia("img", blob.name || "画像", result.url);
+  } catch (error) {
+    uploadError.value =
+      error instanceof Error
+        ? error.message
+        : "画像のアップロードに失敗しました";
   } finally {
-    uploading.value = false
+    uploading.value = false;
   }
-}
+};
 const choose = () => {
-  file.value?.click()
-  close()
-}
+  file.value?.click();
+  close();
+};
 const onFiles = (files: FileList | null) => {
-  const image = files?.[0]
-  if (image) upload(image)
-}
+  const image = files?.[0];
+  if (image) upload(image);
+};
 const keydown = (e: KeyboardEvent) => {
-  if (e.ctrlKey && e.key === 'Enter') {
-    e.preventDefault()
-    emit('save')
-  } else if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'b') {
-    e.preventDefault()
-    format('bold')
-  } else if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'i') {
-    e.preventDefault()
-    format('italic')
-  } else if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'r') {
-    e.preventDefault()
-    format('red')
+  if (e.key === "Tab" && !hasPrimaryModifier(e) && !e.altKey) {
+    e.preventDefault();
+    indent(e.shiftKey);
+  } else if (
+    e.key === "Backspace" &&
+    !hasPrimaryModifier(e) &&
+    !e.altKey &&
+    textarea.value &&
+    textarea.value.selectionStart === textarea.value.selectionEnd &&
+    /^(?: +|\t+)$/.test(
+      textarea.value.value.slice(
+        textarea.value.value.lastIndexOf(
+          "\n",
+          textarea.value.selectionStart - 1,
+        ) + 1,
+        textarea.value.selectionStart,
+      ),
+    )
+  ) {
+    e.preventDefault();
+    indent(true);
+  } else if (hasPrimaryModifier(e) && e.key === "Enter") {
+    e.preventDefault();
+    emit("save");
+  } else if (hasPrimaryOnly(e) && isLetterShortcutKey(e, "B")) {
+    e.preventDefault();
+    format("bold");
+  } else if (hasPrimaryOnly(e) && isLetterShortcutKey(e, "I")) {
+    e.preventDefault();
+    format("italic");
+  } else if (hasPrimaryAndAlt(e) && isLetterShortcutKey(e, "R")) {
+    e.preventDefault();
+    format("red");
+  } else if (hasPrimaryAndAlt(e) && isLetterShortcutKey(e, "Q")) {
+    e.preventDefault();
+    format("strike");
   }
-}
+};
 const paste = (e: ClipboardEvent) => {
   const image = Array.from(e.clipboardData?.files || []).find((f) =>
-    f.type.startsWith('image/'),
-  )
+    f.type.startsWith("image/"),
+  );
   if (image) {
-    e.preventDefault()
-    upload(image)
-    return
+    e.preventDefault();
+    upload(image);
+    return;
   }
-  const text = e.clipboardData?.getData('text/plain').trim() || ''
+  const text = e.clipboardData?.getData("text/plain").trim() || "";
   if (/^https?:\/\/\S+$/.test(text)) {
-    e.preventDefault()
-    let label = text
+    e.preventDefault();
+    let label = text;
     try {
-      label = new URL(text).hostname
+      label = new URL(text).hostname;
     } catch {}
-    insertMedia('link', label, text)
+    insertMedia("link", label, text);
   }
-}
+};
 </script>
 <template>
   <div class="editor-area" @click="close">
@@ -104,6 +158,9 @@ const paste = (e: ClipboardEvent) => {
       @drop.prevent="onFiles($event.dataTransfer?.files || null)"
     />
     <span v-if="uploading" class="uploading">画像をアップロード中…</span>
+    <p v-if="uploadError" class="upload-error" role="alert">
+      {{ uploadError }}
+    </p>
     <input
       ref="file"
       hidden
@@ -129,6 +186,10 @@ const paste = (e: ClipboardEvent) => {
         <span class="red">R</span>
         赤字
       </button>
+      <button @click="applyFormat('strike')">
+        <span class="strike">S</span>
+        取り消し線
+      </button>
       <button @click="choose">画像挿入</button>
       <button @click="addLink">ハイパーリンク</button>
     </div>
@@ -137,13 +198,15 @@ const paste = (e: ClipboardEvent) => {
 <style scoped>
 .editor-area {
   position: relative;
-  min-height: 480px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 .editor-area textarea {
   width: 100%;
   height: 100%;
-  min-height: 480px;
-  resize: vertical;
+  min-height: 0;
+  resize: none;
   border: 0;
   background: var(--panel);
   color: var(--text);
@@ -180,6 +243,10 @@ const paste = (e: ClipboardEvent) => {
   color: #dc2626;
   font-weight: 800;
 }
+.strike {
+  text-decoration: line-through;
+  font-weight: 800;
+}
 .uploading {
   position: absolute;
   right: 18px;
@@ -188,6 +255,18 @@ const paste = (e: ClipboardEvent) => {
   border-radius: 7px;
   background: var(--text);
   color: var(--panel);
-  font-size: 12px;
+  font-size: 14px;
+}
+.upload-error {
+  position: absolute;
+  right: 18px;
+  bottom: 52px;
+  max-width: min(420px, calc(100% - 36px));
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--button-danger);
+  color: #ffffff;
+  font-size: 14px;
 }
 </style>

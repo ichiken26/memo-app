@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Noto+Sans:wght@400;500;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Noto+Sans:wght@400;500;700;800&display=swap");
+@import "katex/dist/katex.min.css";
 
 :root {
   color-scheme: light;
@@ -42,9 +43,20 @@
     #a01515 100%
   );
   --button-focus: rgba(49, 93, 168, 0.34);
+  --tag-selected-bg: #dbe8ff;
+  --tag-selected-bg-hover: #c9dcff;
+  --tag-selected-border: #315da8;
+  --tag-selected-text: #17345f;
+  --memo-red: #b91c1c;
 }
 
-:root[data-theme='dark'] {
+.global-tools-target {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f141d;
   --panel: #181e29;
@@ -85,6 +97,11 @@
     #9e252d 100%
   );
   --button-focus: rgba(169, 199, 255, 0.48);
+  --tag-selected-bg: #294f86;
+  --tag-selected-bg-hover: #35639f;
+  --tag-selected-border: #a9c7ff;
+  --tag-selected-text: #ffffff;
+  --memo-red: #ff8a80;
 }
 
 * {
@@ -101,7 +118,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Noto Sans JP', 'Noto Sans', sans-serif;
+  font-family: "Noto Sans JP", "Noto Sans", sans-serif;
   transition:
     background 0.2s,
     color 0.2s;
@@ -118,7 +135,7 @@ a {
 }
 
 .memo-red {
-  color: #dc2626;
+  color: var(--memo-red);
 }
 
 .page-shell {
@@ -147,7 +164,7 @@ a {
   transform: translateY(1px) scale(0.98);
 }
 
-:where(button:disabled, [aria-disabled='true']) {
+:where(button:disabled, [aria-disabled="true"]) {
   box-shadow: none !important;
   cursor: not-allowed !important;
   filter: saturate(0.45);
@@ -167,7 +184,8 @@ a {
 .editor-header .actions button,
 .new-tag-form button,
 .tag-picker .add-button,
-.tags-shell .delete-button {
+.tags-shell .delete-button,
+.page-actions .delete-button {
   min-height: 44px !important;
   border: 1px solid var(--button-border) !important;
   border-radius: 14px !important;
@@ -177,6 +195,22 @@ a {
   font-weight: 700 !important;
   letter-spacing: 0.015em;
   text-decoration: none;
+}
+
+.page-actions .save-button,
+.page-actions .delete-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: auto;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  flex-shrink: 0;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 1 !important;
 }
 
 .google-button:hover,
@@ -224,6 +258,7 @@ a {
 .logout-link,
 .confirm-button,
 .editor-header .actions .delete,
+.page-actions .delete-button,
 .tags-shell .delete-button {
   border-color: transparent !important;
   background: var(--button-danger) !important;
@@ -233,6 +268,7 @@ a {
 .logout-link:hover,
 .confirm-button:hover,
 .editor-header .actions .delete:hover,
+.page-actions .delete-button:hover,
 .tags-shell .delete-button:hover {
   background: var(--button-danger-hover) !important;
   box-shadow:
@@ -255,7 +291,7 @@ a {
   transform: translateY(-1px) rotate(-5deg);
 }
 
-:root[data-theme='dark'] body button:not(.preset-button) {
+:root[data-theme="dark"] body button:not(.preset-button) {
   color: #ffffff !important;
 }
 

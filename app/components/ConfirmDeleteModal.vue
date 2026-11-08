@@ -1,20 +1,25 @@
 <script setup lang="ts">
 defineProps<{
-  open: boolean
-  title: string
-  message: string
-  confirmLabel?: string
-}>()
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+}>();
 
 const emit = defineEmits<{
-  (event: 'cancel'): void
-  (event: 'confirm'): void
-}>()
+  (event: "cancel"): void;
+  (event: "confirm"): void;
+}>();
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="modal-backdrop" role="presentation" @click.self="emit('cancel')">
+    <div
+      v-if="open"
+      class="modal-backdrop"
+      role="presentation"
+      @click.self="emit('cancel')"
+    >
       <section
         class="modal-panel"
         role="dialog"
@@ -27,8 +32,12 @@ const emit = defineEmits<{
         <h2 id="delete-modal-title">{{ title }}</h2>
         <p>{{ message }}</p>
         <div class="modal-actions">
-          <button class="cancel-button" type="button" @click="emit('cancel')">キャンセル</button>
-          <button class="confirm-button" type="button" @click="emit('confirm')">{{ confirmLabel ?? '削除' }}</button>
+          <button class="cancel-button" type="button" @click="emit('cancel')">
+            キャンセル
+          </button>
+          <button class="confirm-button" type="button" @click="emit('confirm')">
+            {{ confirmLabel ?? "削除" }}
+          </button>
         </div>
       </section>
     </div>
