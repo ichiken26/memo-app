@@ -9,7 +9,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "test:api": "node --import tsx --test tests/api.test.ts",
-    "test:unit": "node --import tsx --test tests/markdown.test.ts",
+    "test:unit": "node --import tsx --test tests/markdown.test.ts tests/memoImages.test.ts tests/shortcutKeys.test.ts tests/memoExcerpt.test.ts",
     "typecheck": "nuxi typecheck",
     "postinstall": "nuxt prepare"
   },

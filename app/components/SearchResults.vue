@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { Memo } from "~~/shared/memos";
+import type { MemoListItem } from "~~/shared/memos";
 
 defineProps<{
-  results: Memo[];
+  results: MemoListItem[];
 }>();
 
 const emit = defineEmits<{
-  (event: "delete", memo: Memo): void;
+  (event: "delete", memo: MemoListItem): void;
 }>();
 </script>
 

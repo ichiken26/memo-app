@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { searchMemos, type Memo } from "~~/shared/memos";
+import type { MemoListItem } from "~~/shared/memos";
 
 const route = useRoute();
+useHead({ title: "MEMO APP | 検索" });
 const router = useRouter();
 const memoStore = useMemoStore();
 const { user } = useFirebaseAuth();
 useLoadMemoStoreForUser(user, memoStore);
-
-const userMemos = computed(() =>
-  user.value ? memoStore.getMemosByOwner(user.value.uid) : [],
-);
 
 const histories = ref(["認証", "タグ検索", "Nuxt", "API"]);
 const searchWord = ref("");
@@ -20,19 +17,19 @@ const isSyncingFromQuery = ref(false);
 const selectedTags = computed(() =>
   memoStore.tags.value.filter((tag) => selectedTagIds.value.includes(tag.id)),
 );
-const memoPendingDelete = ref<Memo | null>(null);
-const directResults = ref<Memo[] | null>(null);
+const memoPendingDelete = ref<MemoListItem | null>(null);
+const directResults = ref<MemoListItem[]>([]);
 const apiFetch = useApiFetch();
-const results = computed(
-  () =>
-    directResults.value ??
-    searchMemos({
-      searchWord: searchWord.value,
-      tags: selectedTags.value.map(({ id, name }) => ({ id, name })),
-      memos: userMemos.value,
-      ownerUid: user.value?.uid,
-    }),
-);
+const searchCursor = ref<string | null>(null);
+const searchHasMore = ref(false);
+const results = computed(() => directResults.value);
+const runSearch = async (append = false) => {
+  if (!user.value) return;
+  const response = await apiFetch<{ results: MemoListItem[]; nextCursor: string | null; hasMore: boolean }>("/api/search", { method: "POST", body: { search_word: searchWord.value, tags: selectedTags.value.map(({ id, name }) => ({ id, name })), ...(append && searchCursor.value ? { cursor: searchCursor.value } : {}) } });
+  const combined = append ? [...directResults.value, ...response.results] : response.results;
+  directResults.value = [...new Map(combined.map((memo) => [memo.id, memo])).values()];
+  searchCursor.value = response.nextCursor; searchHasMore.value = response.hasMore;
+};
 
 const getQueryTokens = () =>
   String(route.query.q ?? route.query.search_word ?? "")
@@ -87,7 +84,7 @@ watch(
   [searchWord, selectedTagIds],
   async () => {
     if (isSyncingFromQuery.value) return;
-    directResults.value = null;
+    directResults.value = [];
     const q = canonicalQuery();
     const currentQuery = String(route.query.q ?? "").trim();
     if (currentQuery === q && route.query.search_word === undefined) return;
@@ -97,7 +94,7 @@ watch(
 );
 
 const submitSearch = async () => {
-  directResults.value = null;
+  directResults.value = [];
   const trimmedWord = searchWord.value.trim();
   if (trimmedWord && !histories.value.includes(trimmedWord)) {
     histories.value = [trimmedWord, ...histories.value].slice(0, 5);
@@ -115,15 +112,7 @@ const submitSearch = async () => {
   });
 };
 
-onMounted(async () => {
-  const q = String(route.query.q ?? "").trim();
-  if (q) {
-    const response = await apiFetch<{ results: Memo[] }>("/api/search", {
-      query: { q },
-    });
-    directResults.value = response.results;
-  }
-});
+watch([() => user.value?.uid, searchWord, selectedTagIds], () => void runSearch(), { immediate: true, deep: true, flush: "post" });
 
 const applyHistory = (word: string) => {
   searchWord.value = word;
@@ -166,6 +155,7 @@ const confirmMemoDelete = async () => {
       :results="results"
       @delete="(memo) => (memoPendingDelete = memo)"
     />
+    <button v-if="searchHasMore" class="submit-button result-area" type="button" @click="runSearch(true)">さらに読み込む</button>
 
     <ConfirmDeleteModal
       :open="Boolean(memoPendingDelete)"

@@ -7,6 +7,7 @@ type TagDraft = {
 };
 
 const memoStore = useMemoStore();
+useHead({ title: "MEMO APP | タグ一覧" });
 const { user } = useFirebaseAuth();
 useLoadMemoStoreForUser(user, memoStore);
 

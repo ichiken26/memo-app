@@ -13,6 +13,59 @@ export type Memo = {
   tags: MemoTag[];
 };
 
+export type MemoListItem = {
+  id: string;
+  title: string;
+  updatedAt: string;
+  excerpt: string;
+  tags: MemoTag[];
+};
+
+export type MemoListPage = {
+  items: MemoListItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
+export const MEMO_PAGE_SIZE = 30;
+export const MEMO_EXCERPT_LENGTH = 400;
+export const MEMO_EXCERPT_LINES = 12;
+/**
+ * 一覧カード用の抜粋。Markdown として描画できるよう改行は保持し、
+ * 行数と文字数の上限まで行単位で切り詰める（1行目が長すぎる場合のみ行の途中で切る）。
+ */
+export const createMemoExcerpt = (body: string) => {
+  const lines = body
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.trimEnd());
+  while (lines.length && !lines[0]!.trim()) lines.shift();
+
+  const picked: string[] = [];
+  let length = 0;
+  for (const line of lines) {
+    if (picked.length >= MEMO_EXCERPT_LINES) break;
+    // 空行の連続は1つにまとめる
+    if (!line.trim() && !picked.at(-1)?.trim()) continue;
+    const nextLength = length + line.length + (picked.length ? 1 : 0);
+    if (nextLength > MEMO_EXCERPT_LENGTH) {
+      if (!picked.length) picked.push(line.slice(0, MEMO_EXCERPT_LENGTH));
+      break;
+    }
+    picked.push(line);
+    length = nextLength;
+  }
+  return picked.join("\n").trimEnd();
+};
+
+export const toMemoListItem = (memo: Memo): MemoListItem => ({
+  id: memo.id,
+  title: memo.title,
+  updatedAt: memo.updatedAt,
+  excerpt: createMemoExcerpt(memo.body),
+  tags: memo.tags.map((tag) => ({ ...tag })),
+});
+
 export const DEMO_USER_UID = "demo-user-001";
 export const UNTAGGED_TAG: MemoTag = {
   id: "untagged",

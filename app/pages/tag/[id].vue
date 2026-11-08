@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Memo } from "~~/shared/memos";
+import type { MemoListItem } from "~~/shared/memos";
 
 const route = useRoute();
 const memoStore = useMemoStore();
@@ -7,16 +7,25 @@ const { user } = useFirebaseAuth();
 useLoadMemoStoreForUser(user, memoStore);
 
 const tag = computed(() => memoStore.findTag(String(route.params.id)));
-const filteredMemos = computed(() =>
-  tag.value && user.value
-    ? memoStore
-        .getMemosByOwner(user.value.uid)
-        .filter((memo) =>
-          memo.tags.some((memoTag) => memoTag.id === tag.value?.id),
-        )
-    : [],
-);
-const memoPendingDelete = ref<Memo | null>(null);
+useHead(() => ({
+  title: `MEMO APP | ${tag.value?.name ?? "タグ"}`,
+}));
+const filteredMemos = ref<MemoListItem[]>([]);
+const apiFetch = useApiFetch();
+const tagCursor = ref<string | null>(null);
+const tagHasMore = ref(false);
+const loadTagPage = async (append = false) => {
+  const selectedTag = tag.value;
+  if (!selectedTag || !user.value) return;
+  const response = await apiFetch<{ results: MemoListItem[]; nextCursor: string | null; hasMore: boolean }>("/api/search", { method: "POST", body: { tags: [{ id: selectedTag.id, name: selectedTag.name }], ...(append && tagCursor.value ? { cursor: tagCursor.value } : {}) } });
+  const combined = append ? [...filteredMemos.value, ...response.results] : response.results;
+  filteredMemos.value = [...new Map(combined.map((memo) => [memo.id, memo])).values()]; tagCursor.value = response.nextCursor; tagHasMore.value = response.hasMore;
+};
+watch([tag, () => user.value?.uid], async ([selectedTag, ownerUid]) => {
+  if (!selectedTag || !ownerUid) return;
+  await loadTagPage();
+}, { immediate: true });
+const memoPendingDelete = ref<MemoListItem | null>(null);
 
 const confirmMemoDelete = async () => {
   if (!user.value || !memoPendingDelete.value) {
@@ -39,12 +48,21 @@ const confirmMemoDelete = async () => {
       <div data-shortcut-help-target class="global-tools-target" />
     </header>
 
-    <MemoPreviewList
-      v-if="tag"
-      class="memo-list"
-      :memos="filteredMemos"
-      @delete="(memo) => (memoPendingDelete = memo)"
-    />
+    <template v-if="tag">
+      <MemoPreviewList
+        class="memo-list"
+        :memos="filteredMemos"
+        @delete="(memo) => (memoPendingDelete = memo)"
+      />
+      <button
+        v-if="tagHasMore"
+        class="load-more"
+        type="button"
+        @click="loadTagPage(true)"
+      >
+        さらに読み込む
+      </button>
+    </template>
 
     <section v-else class="missing">
       指定されたタグ ID に一致するタグはありません。

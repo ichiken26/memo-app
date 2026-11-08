@@ -21,6 +21,18 @@ export const hasPrimaryOnly = (event: KeyboardEvent) =>
 export const hasPrimaryAndAlt = (event: KeyboardEvent) =>
   hasPrimaryModifier(event) && event.altKey;
 
+/** Match a letter shortcut even when Option/Alt changes KeyboardEvent.key. */
+export const isLetterShortcutKey = (
+  event: Pick<KeyboardEvent, "code" | "key">,
+  letter: string,
+) => {
+  const normalizedLetter = letter.toUpperCase();
+  return (
+    event.code === `Key${normalizedLetter}` ||
+    (!event.code && event.key.toUpperCase() === normalizedLetter)
+  );
+};
+
 export const primaryModifierLabel = () => (isApplePlatform() ? "⌘" : "Ctrl");
 
 export const altModifierLabel = () => (isApplePlatform() ? "⌥" : "Alt");

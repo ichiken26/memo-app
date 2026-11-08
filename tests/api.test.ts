@@ -7,6 +7,7 @@ type TestEvent = {
   params?: Record<string, string>;
   query?: Record<string, string>;
   statusCode?: number;
+  responseHeaders?: Record<string, string>;
   context: {
     firebaseUser?: { uid: string };
     cloudflare: {
@@ -48,7 +49,7 @@ type ApiHandler<TResponse> = (
 ) => TResponse | Promise<TResponse>;
 
 type MemoResponse = { memo: Memo };
-type MemosResponse = { memos: Memo[] };
+type MemosResponse = { items: Array<{ id: string; title: string; updatedAt: string; excerpt: string; tags: MemoTag[] }>; nextCursor: string | null; hasMore: boolean };
 type TagResponse = { tag: MemoTag };
 type TagsResponse = { tags: MemoTag[] };
 type DeleteResponse = { deleted: true };
@@ -89,6 +90,8 @@ declare global {
   }) => HttpError;
   // eslint-disable-next-line no-var
   var getHeader: (event: TestEvent, name: string) => string | undefined;
+  // eslint-disable-next-line no-var
+  var setResponseHeader: (event: TestEvent, name: string, value: string) => void;
 }
 
 globalThis.defineEventHandler = (handler) => handler;
@@ -105,6 +108,10 @@ globalThis.createError = ({ statusCode, statusMessage }) => {
   return error;
 };
 globalThis.getHeader = () => undefined;
+globalThis.setResponseHeader = (event, name, value) => {
+  event.responseHeaders ??= {};
+  event.responseHeaders[name] = value;
+};
 
 type UserRow = {
   uid: string;
@@ -181,6 +188,31 @@ const queryAll = (
   values: unknown[],
 ) => {
   const normalizedSql = normalizeSql(sql);
+
+  if (normalizedSql.includes("select m.id, m.title, m.body") && normalizedSql.includes("from memos m where")) {
+    const ownerUid = String(values[0]);
+    const limit = Number(values.at(-1));
+    const wordCount = (normalizedSql.match(/lower\(m\.title\) like \?/g)?.length ?? 0);
+    const tagCount = normalizedSql.match(/wanted\.tag_id = \?/g)?.length ?? 0;
+    const words = Array.from({ length: wordCount }, (_, index) => String(values[1 + index * 2]).slice(1, -1).replace(/\\([\\%_])/g, "$1").toLowerCase());
+    const tagStart = 1 + wordCount * 2;
+    const tagIds = values.slice(tagStart, tagStart + tagCount).map(String);
+    const cursorValues = normalizedSql.includes("m.updated_at < ?") ? values.slice(tagStart + tagCount, tagStart + tagCount + 6).map(String) : null;
+    return database.memos.filter((memo) => memo.ownerUid === ownerUid)
+      .filter((memo) => words.every((word) => `${memo.title} ${memo.body}`.toLowerCase().includes(word)))
+      .filter((memo) => tagIds.every((tagId) => database.memoTags.some((link) => link.memoId === memo.id && link.tagId === tagId)))
+      .filter((memo) => !cursorValues || memo.updatedAt < cursorValues[0]! || (memo.updatedAt === cursorValues[1] && memo.createdAt < cursorValues[2]!) || (memo.updatedAt === cursorValues[3] && memo.createdAt === cursorValues[4] && memo.id > cursorValues[5]!))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id))
+      .slice(0, limit).map((memo) => ({ id: memo.id, title: memo.title, body: memo.body, updatedAt: memo.updatedAt, createdAt: memo.createdAt }));
+  }
+
+  if (normalizedSql.includes("from memo_tags mt join tags t")) {
+    const [ownerUid, ...memoIds] = values.map(String);
+    return database.memoTags.flatMap((link) => {
+      const tag = memoIds.includes(link.memoId) ? database.tags.find((candidate) => candidate.id === link.tagId && candidate.ownerUid === ownerUid) : undefined;
+      return tag ? [{ memoId: link.memoId, id: tag.id, name: tag.name, color: tag.color }] : [];
+    });
+  }
 
   if (normalizedSql.includes("from memos m")) {
     const ownerUid = String(values.at(-1));
@@ -466,16 +498,31 @@ beforeEach(() => {
 
 describe("memo API with D1", () => {
   test("GET /api/memos returns memos for owner", async () => {
-    const response = await handlers.listMemos(
-      event({ query: { ownerUid: "demo-user-001" } }),
-    );
+    const request = event({ query: { ownerUid: "demo-user-001" } });
+    const response = await handlers.listMemos(request);
 
-    assert.equal(response.memos.length, 6);
-    assert.equal(response.memos[0].id, "memo-20260512-タグ検索-UI-の検討");
-    assert.equal(
-      response.memos.every((memo) => memo.ownerUid === "demo-user-001"),
-      true,
-    );
+    assert.equal(response.items.length, 6);
+    assert.equal(response.items[0].id, "memo-20260512-タグ検索-UI-の検討");
+    assert.equal(response.items.every((memo) => !("body" in memo)), true);
+    assert.equal(request.responseHeaders?.["Cache-Control"], "private, no-store");
+    assert.match(request.responseHeaders?.["Server-Timing"] ?? "", /auth;dur=.*db;dur=.*map;dur=.*total;dur=/);
+  });
+
+  test("GET /api/memos rejects an invalid cursor and clamps limit to 30", async () => {
+    await assert.rejects(handlers.listMemos(event({ query: { cursor: "not-a-cursor" } })), (error) => (error as HttpError).statusCode === 400);
+    for (let index = 0; index < 40; index += 1) db.memos.push({ id: `extra-${index}`, ownerUid: "demo-user-001", title: `extra ${index}`, body: "body", updatedAt: "2026-05-01", createdAt: "2026-05-01" });
+    const response = await handlers.listMemos(event({ query: { limit: "999" } }));
+    assert.equal(response.items.length, 30);
+    assert.equal(response.hasMore, true);
+  });
+
+  test("GET /api/memos paginates stable same-timestamp rows without duplicates or gaps", async () => {
+    for (let index = 0; index < 35; index += 1) db.memos.push({ id: `same-${String(index).padStart(2, "0")}`, ownerUid: "demo-user-001", title: `same ${index}`, body: "body", updatedAt: "2026-06-01", createdAt: "2026-06-01" });
+    const first = await handlers.listMemos(event({ query: { limit: "30" } }));
+    const second = await handlers.listMemos(event({ query: { limit: "30", cursor: first.nextCursor! } }));
+    const ids = [...first.items, ...second.items].map((memo) => memo.id);
+    assert.equal(new Set(ids).size, ids.length);
+    assert.equal(ids.filter((id) => id.startsWith("same-")).length, 35);
   });
 
   test("GET /api/memos requires authentication", async () => {
@@ -518,11 +565,8 @@ describe("memo API with D1", () => {
       event({ query: { ownerUid: "demo-user-001" } }),
     );
 
-    assert.equal(response.memos.length, 6);
-    assert.equal(
-      response.memos.every((memo) => memo.ownerUid === "demo-user-001"),
-      true,
-    );
+    assert.equal(response.items.length, 6);
+    assert.equal(response.items.some((memo) => memo.id === "memo-20260516-other-user"), false);
   });
 
   test("POST /api/memos creates a memo using memo-{date}-{name} id", async () => {

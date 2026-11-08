@@ -4,12 +4,26 @@ import type { MemoTag } from "~~/shared/memos";
 const route = useRoute();
 const router = useRouter();
 const memoStore = useMemoStore();
-const { user } = useFirebaseAuth();
+const { user, isReady } = useFirebaseAuth();
 useLoadMemoStoreForUser(user, memoStore);
 
 const memoId = computed(() => String(route.params.id));
 const memo = computed(() =>
   user.value ? memoStore.findMemoForOwner(memoId.value, user.value.uid) : null,
+);
+const isMemoLoading = computed(
+  () =>
+    !isReady.value ||
+    Boolean(user.value && memoStore.detailLoadingById.value[memoId.value]),
+);
+watch(
+  [() => user.value?.uid, memoId],
+  async ([ownerUid, id]) => {
+    if (!ownerUid || !id) return;
+    try { await memoStore.loadDetail(id, ownerUid); }
+    catch { /* The store exposes the per-ID error for rendering and retry. */ }
+  },
+  { immediate: true },
 );
 const saveStatus = ref("保存済み");
 const hasUnsavedChanges = ref(false);
@@ -33,6 +47,16 @@ watch(
   },
   { immediate: true },
 );
+// タブ名は編集中のタイトルに追従させる（未入力時はプレースホルダー）
+useHead(() => {
+  if (!memo.value) {
+    return {
+      title: isMemoLoading.value ? "読み込み中…" : "メモが見つかりません",
+    };
+  }
+  const title = (currentDraft.value?.title ?? memo.value.title).trim();
+  return { title: title || "無題のメモ" };
+});
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let changeVersion = 0;
 
@@ -209,9 +233,14 @@ onBeforeRouteLeave(() => {
       />
     </section>
 
+    <section v-else-if="isMemoLoading" class="missing" aria-live="polite">
+      <h1>メモを読み込んでいます</h1>
+    </section>
+
     <section v-else class="missing">
       <h1>メモが見つかりません</h1>
-      <p>指定されたメモ ID に一致するメモはありません。</p>
+      <p>{{ memoStore.detailErrorById.value[memoId] ?? "指定されたメモ ID に一致するメモはありません。" }}</p>
+      <button v-if="user" type="button" @click="memoStore.loadDetail(memoId, user.uid, { force: true })">再試行</button>
     </section>
   </main>
 </template>

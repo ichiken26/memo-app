@@ -6,7 +6,9 @@ import {
   createTagId,
   getToday,
   type Memo,
+  type MemoListItem,
   type MemoTag,
+  createMemoExcerpt,
 } from "../../shared/memos";
 
 type MemoTagRow = {
@@ -18,6 +20,51 @@ type MemoTagRow = {
   tagId: string | null;
   tagName: string | null;
   tagColor: string | null;
+};
+
+type MemoListRow = {
+  id: string;
+  title: string;
+  body: string;
+  updatedAt: string;
+  createdAt: string;
+};
+
+type Cursor = { updatedAt: string; createdAt: string; id: string };
+const MAX_SEARCH_WORDS = 8;
+const MAX_SEARCH_WORD_LENGTH = 100;
+const MAX_SEARCH_TAGS = 20;
+const encodeBase64Url = (value: string) => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+};
+const decodeBase64Url = (value: string) => {
+  const padded = value.replaceAll("-", "+").replaceAll("_", "/") + "===".slice((value.length + 3) % 4);
+  const binary = atob(padded);
+  return new TextDecoder().decode(Uint8Array.from(binary, (char) => char.charCodeAt(0)));
+};
+export const encodeMemoCursor = (cursor: Cursor) => encodeBase64Url(JSON.stringify(cursor));
+export const decodeMemoCursor = (value?: string | null): Cursor | null => {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(decodeBase64Url(value)) as Partial<Cursor>;
+    if (
+      typeof parsed.updatedAt !== "string" ||
+      typeof parsed.createdAt !== "string" ||
+      typeof parsed.id !== "string" ||
+      !parsed.updatedAt ||
+      !parsed.createdAt ||
+      !parsed.id ||
+      parsed.updatedAt.length > 100 ||
+      parsed.createdAt.length > 100 ||
+      parsed.id.length > 512
+    ) throw new Error();
+    return parsed as Cursor;
+  } catch {
+    throw createError({ statusCode: 400, statusMessage: "Invalid memo cursor" });
+  }
 };
 
 type TagRow = {
@@ -97,6 +144,47 @@ export const listMemosByOwner = async (db: D1Database, ownerUid: string) => {
     .all<MemoTagRow>();
 
   return mapMemoRows(results);
+};
+
+export const listMemoPageByOwner = async (
+  db: D1Database,
+  input: { ownerUid: string; limit: number; cursor?: Cursor | null; searchWords?: string[]; tagIds?: string[] },
+) => {
+  const clauses = ["m.owner_uid = ?"];
+  const bindings: unknown[] = [input.ownerUid];
+  for (const word of input.searchWords ?? []) {
+    clauses.push("(lower(m.title) LIKE ? ESCAPE '\\' OR lower(m.body) LIKE ? ESCAPE '\\')");
+    const escaped = `%${word.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
+    bindings.push(escaped, escaped);
+  }
+  for (const tagId of [...new Set(input.tagIds ?? [])]) {
+    clauses.push("EXISTS (SELECT 1 FROM memo_tags wanted WHERE wanted.memo_id = m.id AND wanted.tag_id = ?)");
+    bindings.push(tagId);
+  }
+  if (input.cursor) {
+    clauses.push("(m.updated_at < ? OR (m.updated_at = ? AND m.created_at < ?) OR (m.updated_at = ? AND m.created_at = ? AND m.id > ?))");
+    bindings.push(input.cursor.updatedAt, input.cursor.updatedAt, input.cursor.createdAt, input.cursor.updatedAt, input.cursor.createdAt, input.cursor.id);
+  }
+  const { results } = await db.prepare(`
+    SELECT m.id, m.title, m.body, m.updated_at AS updatedAt, m.created_at AS createdAt
+    FROM memos m WHERE ${clauses.join(" AND ")}
+    ORDER BY m.updated_at DESC, m.created_at DESC, m.id ASC LIMIT ?
+  `).bind(...bindings, input.limit + 1).all<MemoListRow>();
+  const pageRows = results.slice(0, input.limit);
+  const ids = pageRows.map((row) => row.id);
+  const tagMap = new Map<string, MemoTag[]>();
+  if (ids.length) {
+    const tagResult = await db.prepare(`
+      SELECT mt.memo_id AS memoId, t.id, t.name, t.color
+      FROM memo_tags mt JOIN tags t ON t.id = mt.tag_id
+      WHERE t.owner_uid = ? AND mt.memo_id IN (${ids.map(() => "?").join(",")})
+      ORDER BY t.name ASC
+    `).bind(input.ownerUid, ...ids).all<MemoTag & { memoId: string }>();
+    for (const row of tagResult.results) tagMap.set(row.memoId, [...(tagMap.get(row.memoId) ?? []), { id: row.id, name: row.name, color: row.color }]);
+  }
+  const items: MemoListItem[] = pageRows.map((row) => ({ id: row.id, title: row.title, updatedAt: row.updatedAt, excerpt: createMemoExcerpt(row.body), tags: tagMap.get(row.id) ?? [] }));
+  const last = pageRows.at(-1);
+  return { items, hasMore: results.length > input.limit, nextCursor: results.length > input.limit && last ? encodeMemoCursor(last) : null };
 };
 
 export const getMemoByOwner = async (
@@ -314,28 +402,23 @@ export const searchMemos = async (
     ownerUid: string;
     searchWord: string;
     tags: Pick<MemoTag, "id" | "name">[];
+    cursor?: Cursor | null;
+    limit?: number;
   },
 ) => {
-  const memos = await listMemosByOwner(db, input.ownerUid);
   const searchWords = input.searchWord
     .trim()
     .toLowerCase()
     .split(/\s+/)
-    .filter(Boolean);
-  const selectedTagIds = input.tags.map((tag) => tag.id);
-
-  return memos.filter((memo) => {
-    const searchableText = `${memo.title} ${memo.body}`.toLowerCase();
-    const matchesWord =
-      searchWords.length === 0 ||
-      searchWords.every((word) => searchableText.includes(word));
-    const matchesTags =
-      selectedTagIds.length === 0 ||
-      selectedTagIds.every((tagId) =>
-        memo.tags.some((tag) => tag.id === tagId),
-      );
-
-    return matchesWord && matchesTags;
+    .filter(Boolean)
+    .slice(0, MAX_SEARCH_WORDS)
+    .map((word) => word.slice(0, MAX_SEARCH_WORD_LENGTH));
+  return listMemoPageByOwner(db, {
+    ownerUid: input.ownerUid,
+    searchWords,
+    tagIds: input.tags.map((tag) => tag.id).filter(Boolean).slice(0, MAX_SEARCH_TAGS),
+    limit: input.limit ?? 30,
+    cursor: input.cursor,
   });
 };
 

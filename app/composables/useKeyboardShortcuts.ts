@@ -1,12 +1,13 @@
 import {
   hasPrimaryAndAlt,
   hasPrimaryOnly,
+  isLetterShortcutKey,
 } from "~~/shared/shortcutKeys";
 
 export const useKeyboardShortcuts = () => {
   const router = useRouter();
   const handler = (event: KeyboardEvent) => {
-    if (hasPrimaryAndAlt(event) && event.key.toLowerCase() === "s") {
+    if (hasPrimaryAndAlt(event) && isLetterShortcutKey(event, "S")) {
       event.preventDefault();
       router.push("/search");
       return;
@@ -20,7 +21,7 @@ export const useKeyboardShortcuts = () => {
 
     if (
       hasPrimaryAndAlt(event) &&
-      event.key.toLowerCase() === "l" &&
+      isLetterShortcutKey(event, "L") &&
       router.currentRoute.value.path === "/search"
     ) {
       event.preventDefault();

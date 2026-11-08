@@ -2,7 +2,7 @@
 
 現在の実装を基準にした Nuxt server API の仕様。データは Cloudflare D1 で永続化する。
 
-メモとタグは Firebase Auth のユーザーID相当の `ownerUid` に紐づけて管理する。作成・更新・検索時はRequest body、参照・削除時はquery parameterで `ownerUid` を必須として受け取る。本番API接続時はクライアント指定値を信用せず、Firebase IDトークンを検証して得た `uid` を `ownerUid` として使う。
+メモとタグは Firebase Auth のユーザーID相当の `ownerUid` に紐づけて管理する。すべてのAPIはFirebase IDトークンを検証して得た `uid` を所有者として使い、body/queryの `ownerUid` は信用しない。認証済みAPIの応答は `Cache-Control: private, no-store` とし、計測情報へUID、本文、検索語、Authorizationを含めない。
 
 ## 共通データ型
 
@@ -36,6 +36,20 @@ ID は作成日と名前から生成する。
   "id": "tag-20260501-Product",
   "name": "Product",
   "color": "#2563eb"
+}
+```
+
+### MemoListItem
+
+一覧・検索・タグ別一覧は本文を返さず、本文先頭から行単位で最大12行・400文字に切り詰めた `excerpt` を返す。改行は保持し（連続空行は1つにまとめる）、クライアントは Markdown として描画する。
+
+```json
+{
+  "id": "memo-20260512-example",
+  "title": "例",
+  "updatedAt": "2026-05-12",
+  "excerpt": "短いプレビュー",
+  "tags": []
 }
 ```
 
@@ -79,21 +93,25 @@ Response 201:
 
 ### READ: GET /api/memos
 
-メモ一覧を取得する。`ownerUid` は必須で、そのユーザーに紐づくメモだけを返す。
+メモ一覧を更新日時順で取得する。`limit` の既定値・最大値は30。`cursor` はサーバーが発行する検証済みopaqueカーソルで、改変・不正形式は400。順序キーは `updated_at DESC, created_at DESC, id ASC`。
 
 Query:
 
 ```text
-ownerUid=firebase-user-uid
+limit=30&cursor=opaque-value
 ```
 
 Response 200:
 
 ```json
 {
-  "memos": []
+  "items": [],
+  "nextCursor": null,
+  "hasMore": false
 }
 ```
+
+対象メモを先に最大 `limit + 1` 件取得し、そのページのIDに限ってタグを2本目のqueryで取得する。`items` に `body` と `ownerUid` は含まれない。
 
 ### READ: GET /api/memos/{memoId}
 

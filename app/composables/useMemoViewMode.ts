@@ -1,4 +1,4 @@
-import { hasPrimaryAndAlt } from "~~/shared/shortcutKeys";
+import { hasPrimaryAndAlt, isLetterShortcutKey } from "~~/shared/shortcutKeys";
 
 export const useMemoViewMode = () => {
   const route = useRoute();
@@ -13,11 +13,11 @@ export const useMemoViewMode = () => {
 
   const modeShortcut = (event: KeyboardEvent) => {
     if (!hasPrimaryAndAlt(event)) return;
-    if (event.key.toLowerCase() === "e") {
+    if (isLetterShortcutKey(event, "E")) {
       event.preventDefault();
       void setMode("edit");
     }
-    if (event.key.toLowerCase() === "p") {
+    if (isLetterShortcutKey(event, "P")) {
       event.preventDefault();
       void setMode("preview");
     }

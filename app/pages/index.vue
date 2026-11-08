@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { UNTAGGED_TAG, groupMemoListByTag, type Memo } from "~~/shared/memos";
+import type { MemoListItem } from "~~/shared/memos";
 
 const memoStore = useMemoStore();
+useHead({ title: "MEMO APP | メモ一覧" });
 const {
   user,
   isAuthenticated,
@@ -17,10 +18,7 @@ useLoadMemoStoreForUser(user, memoStore);
 const userMemos = computed(() =>
   user.value ? memoStore.getMemosByOwner(user.value.uid) : [],
 );
-const tagGroups = computed(() =>
-  groupMemoListByTag(userMemos.value, memoStore.tags.value),
-);
-const memoPendingDelete = ref<Memo | null>(null);
+const memoPendingDelete = ref<MemoListItem | null>(null);
 const isCreatingStarter = ref(false);
 
 const retryLoad = async () => {
@@ -95,7 +93,7 @@ const confirmMemoDelete = async () => {
           <TopLogoLink />
           <div>
             <p class="eyebrow">Memo Workspace</p>
-            <h1>タグ別メモ一覧</h1>
+            <h1>最近更新したメモ</h1>
           </div>
         </div>
         <nav class="nav-actions" aria-label="主要ナビゲーション">
@@ -168,41 +166,12 @@ const confirmMemoDelete = async () => {
         </button>
       </section>
 
-      <section v-else class="tag-grid" aria-label="タグごとのメモプレビュー">
-        <article
-          v-for="group in tagGroups"
-          :key="group.tag.id"
-          class="tag-section"
-        >
-          <div
-            v-if="group.tag.id === UNTAGGED_TAG.id"
-            class="tag-heading untagged-heading"
-          >
-            <span
-              class="tag-dot"
-              :style="{ backgroundColor: group.tag.color }"
-            />
-            <span>{{ group.tag.name }}</span>
-            <span class="count">{{ group.memos.length }}</span>
-          </div>
-          <NuxtLink
-            v-else
-            class="tag-heading"
-            :to="`/tag/${group.tag.id}?tag=${encodeURIComponent(group.tag.name)}`"
-          >
-            <span
-              class="tag-dot"
-              :style="{ backgroundColor: group.tag.color }"
-            />
-            <span>{{ group.tag.name }}</span>
-            <span class="count">{{ group.memos.length }}</span>
-          </NuxtLink>
-
-          <MemoPreviewList
-            class="memo-list"
-            :memos="group.memos"
-            @delete="(memo) => (memoPendingDelete = memo)"
-          />
+      <section v-else class="tag-grid" aria-label="最近更新したメモ">
+        <article class="tag-section">
+          <MemoPreviewList class="memo-list" :memos="userMemos" @delete="(memo) => (memoPendingDelete = memo)" />
+          <button v-if="memoStore.hasMore.value" class="ghost-button" type="button" :disabled="memoStore.isLoading.value" @click="memoStore.loadMore">
+            {{ memoStore.isLoading.value ? "読み込み中…" : "さらに読み込む" }}
+          </button>
         </article>
       </section>
 

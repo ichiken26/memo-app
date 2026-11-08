@@ -2,6 +2,7 @@
 import type { MemoTag } from "~~/shared/memos";
 
 const router = useRouter();
+useHead({ title: "MEMO APP | 新規メモ" });
 const memoStore = useMemoStore();
 const { user } = useFirebaseAuth();
 useLoadMemoStoreForUser(user, memoStore);

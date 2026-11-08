@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { indentMarkdownLines } from "~~/shared/markdown";
-import { hasPrimaryAndAlt, hasPrimaryModifier, hasPrimaryOnly } from "~~/shared/shortcutKeys";
+import {
+  hasPrimaryAndAlt,
+  hasPrimaryModifier,
+  hasPrimaryOnly,
+  isLetterShortcutKey,
+} from "~~/shared/shortcutKeys";
 
 const props = defineProps<{ modelValue: string }>();
 const apiFetch = useApiFetch();
@@ -105,16 +110,16 @@ const keydown = (e: KeyboardEvent) => {
   } else if (hasPrimaryModifier(e) && e.key === "Enter") {
     e.preventDefault();
     emit("save");
-  } else if (hasPrimaryOnly(e) && e.key.toLowerCase() === "b") {
+  } else if (hasPrimaryOnly(e) && isLetterShortcutKey(e, "B")) {
     e.preventDefault();
     format("bold");
-  } else if (hasPrimaryOnly(e) && e.key.toLowerCase() === "i") {
+  } else if (hasPrimaryOnly(e) && isLetterShortcutKey(e, "I")) {
     e.preventDefault();
     format("italic");
-  } else if (hasPrimaryAndAlt(e) && e.key.toLowerCase() === "r") {
+  } else if (hasPrimaryAndAlt(e) && isLetterShortcutKey(e, "R")) {
     e.preventDefault();
     format("red");
-  } else if (hasPrimaryAndAlt(e) && e.key.toLowerCase() === "q") {
+  } else if (hasPrimaryAndAlt(e) && isLetterShortcutKey(e, "Q")) {
     e.preventDefault();
     format("strike");
   }

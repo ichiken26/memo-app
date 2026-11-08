@@ -1,4 +1,4 @@
-import { getDb, listTagsByOwner, searchMemos } from "../utils/d1";
+import { decodeMemoCursor, getDb, listTagsByOwner, searchMemos } from "../utils/d1";
 import { requireFirebaseUser } from "../utils/firebaseAuth";
 
 export default defineEventHandler(async (event) => {
@@ -16,11 +16,13 @@ export default defineEventHandler(async (event) => {
   const searchWord = words
     .filter((word) => !tagNames.has(word.toLowerCase()))
     .join(" ");
-  return {
-    results: await searchMemos(getDb(event), {
-      ownerUid,
-      searchWord,
-      tags: selectedTags,
-    }),
-  };
+  const page = await searchMemos(getDb(event), {
+    ownerUid,
+    searchWord,
+    tags: selectedTags,
+    cursor: decodeMemoCursor(
+      typeof query.cursor === "string" ? query.cursor : null,
+    ),
+  });
+  return { results: page.items, nextCursor: page.nextCursor, hasMore: page.hasMore };
 });
