@@ -349,7 +349,49 @@ a {
   }
 }
 
-/* タスマネに埋め込まれているときはロゴ（トップへの遷移）を隠す */
-html[data-embedded="true"] .top-logo-link {
+/* タスマネに埋め込まれているとき: ヘッダーを省き、ツールバーを1行にして編集領域を広く取る */
+html[data-embedded="true"] .memo-header,
+html[data-embedded="true"] .detail-meta .meta-label {
   display: none;
+}
+
+html[data-embedded="true"] .new-memo-shell,
+html[data-embedded="true"] .memo-shell {
+  padding: 10px 12px 12px;
+}
+
+html[data-embedded="true"] .memo-detail {
+  max-width: none;
+  margin-top: 0;
+}
+
+html[data-embedded="true"] .detail-meta {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+html[data-embedded="true"] .page-actions {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 編集モードの切替は左寄せ、その他の操作は右側 */
+html[data-embedded="true"] .page-actions .action-mode {
+  order: -1;
+  width: auto;
+  min-height: 36px;
+  margin-right: auto;
+  justify-content: flex-start;
+}
+
+html[data-embedded="true"] .page-actions .action-save,
+html[data-embedded="true"] .page-actions .action-delete {
+  width: auto;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
 }
