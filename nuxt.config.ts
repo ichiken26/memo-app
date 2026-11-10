@@ -14,6 +14,11 @@ export default defineNuxtConfig({
       title: "MEMO APP",
       script: [
         {
+          // iframe 内なら描画前に埋め込み用レイアウトにする（親オリジンの検証と連携は embed プラグインで行う）
+          id: "memo-embed-init",
+          innerHTML: `(function(){try{if(window.self!==window.top)document.documentElement.dataset.embedded='true'}catch(e){document.documentElement.dataset.embedded='true'}})()`,
+        },
+        {
           id: "memo-theme-init",
           innerHTML: `(function(){try{var t=localStorage.getItem('memo-theme');if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';localStorage.setItem('memo-theme',t)}document.documentElement.dataset.theme=t}catch(e){}})()`,
         },
