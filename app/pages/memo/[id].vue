@@ -73,6 +73,7 @@ const saveMemo = async (
   try {
     if (user.value) {
       await memoStore.updateMemo(memoId.value, value);
+      notifyMemoSaved({ id: memoId.value, title: value.title });
     }
     if (version !== changeVersion) {
       return;

@@ -348,3 +348,8 @@ a {
     transition: none;
   }
 }
+
+/* タスマネに埋め込まれているときはロゴ（トップへの遷移）を隠す */
+html[data-embedded="true"] .top-logo-link {
+  display: none;
+}

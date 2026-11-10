@@ -31,6 +31,7 @@ const createMemo = async (value: {
   isSaving.value = true;
   try {
     const memo = await memoStore.createMemo(value);
+    notifyMemoSaved({ id: memo.id, title: memo.title ?? value.title });
     await router.push(`/memo/${encodeURIComponent(memo.id)}?mode=edit`);
   } finally {
     isSaving.value = false;
