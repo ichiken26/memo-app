@@ -1,16 +1,19 @@
 // タスマネ（親ウィンドウ）に埋め込まれたときの postMessage ブリッジ
 // - 許可した親オリジンとのみ通信する（event.origin と送信先を必ず固定）
-// - 親から受け取るのは Google ID トークン（Firebase へのログイン引き継ぎ）だけ
+// - 親から受け取るのは Google ID トークン（Firebase へのログイン引き継ぎ）と保存要求だけ
 
 export const DEFAULT_EMBED_PARENT_ORIGINS =
   "https://tasmane.kokage-studio.com,http://localhost:3000,http://localhost:3100";
 
-export type ParentMessage = { type: "auth"; idToken: string; rawNonce?: string };
+export type ParentMessage =
+  | { type: "auth"; idToken: string; rawNonce?: string }
+  | { type: "save-request"; requestId: string };
 
 export type MemoAppMessage =
   | { source: "memo-app"; type: "ready"; signedIn: boolean; email: string | null }
   | { source: "memo-app"; type: "auth-result"; ok: boolean; error?: string }
-  | { source: "memo-app"; type: "memo-saved"; memo: { id: string; title: string; url: string } };
+  | { source: "memo-app"; type: "memo-saved"; memo: { id: string; title: string; url: string }; requestId?: string }
+  | { source: "memo-app"; type: "save-skipped"; reason: "empty" | "signed-out" | "failed"; requestId: string };
 
 // 許可オリジン一覧の解析（http/https のオリジンのみ）
 export const parseAllowedOrigins = (value: string): string[] =>
@@ -52,7 +55,14 @@ export const parseParentMessage = (
 ): ParentMessage | null => {
   if (origin !== parentOrigin || !data || typeof data !== "object") return null;
   const value = data as Record<string, unknown>;
-  if (value.source !== "tasmane" || value.type !== "auth") return null;
+  if (value.source !== "tasmane") return null;
+  // 親（タスマネ）でのタスク保存時に、編集中のメモを保存させる
+  if (value.type === "save-request") {
+    return typeof value.requestId === "string" && value.requestId
+      ? { type: "save-request", requestId: value.requestId }
+      : null;
+  }
+  if (value.type !== "auth") return null;
   if (typeof value.idToken !== "string" || !value.idToken) return null;
   if (value.rawNonce !== undefined && typeof value.rawNonce !== "string") return null;
   return {
