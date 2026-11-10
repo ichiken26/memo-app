@@ -39,7 +39,26 @@ const indent = (outdent = false) => {
   });
 };
 const close = () => (menu.value.open = false);
+// 直前のポインター種別。タッチ長押しでも contextmenu が発火するため判定に使う
+const lastPointerType = ref<string>("");
+const onPointerDown = (e: PointerEvent) => {
+  lastPointerType.value = e.pointerType;
+};
+const isTouchContextMenu = (e: MouseEvent) => {
+  // Chrome 等では contextmenu 自体が PointerEvent で pointerType を持つ
+  const pointerType =
+    (e as Partial<PointerEvent>).pointerType || lastPointerType.value;
+  if (pointerType) return pointerType !== "mouse";
+  return window.matchMedia?.("(hover: none) and (pointer: coarse)").matches;
+};
 const context = (e: MouseEvent) => {
+  // モバイルでは独自メニューを出さず、OS 標準のコピー/貼り付けメニューに任せる
+  if (isTouchContextMenu(e)) {
+    close();
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
   menu.value = { open: true, x: e.clientX, y: e.clientY };
 };
 const applyFormat = (kind: "bold" | "italic" | "red" | "strike") => {
@@ -151,7 +170,8 @@ const paste = (e: ClipboardEvent) => {
       v-model="body"
       aria-label="メモ本文"
       placeholder="Markdownでメモを入力"
-      @contextmenu.prevent.stop="context"
+      @pointerdown="onPointerDown"
+      @contextmenu="context"
       @keydown="keydown"
       @paste="paste"
       @dragover.prevent

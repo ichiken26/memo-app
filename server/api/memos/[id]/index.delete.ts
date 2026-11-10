@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   const bucket = event.context.cloudflare?.env?.MEMO_IMAGES as
     | R2Bucket
     | undefined;
-  await deleteRemovedMemoImages(bucket, ownerUid, memo.body, "");
+  await deleteRemovedMemoImages(bucket, db, ownerUid, memo.body, "");
 
   return { deleted: true };
 });

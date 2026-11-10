@@ -37,6 +37,9 @@ export default defineNuxtConfig({
       firebaseStorageBucket: "",
       firebaseMessagingSenderId: "",
       firebaseMeasurementId: "",
+      // タスマネ等、埋め込みを許可する親オリジン（カンマ区切り）
+      embedParentOrigins:
+        "https://tasmane.kokage-studio.com,http://localhost:3000,http://localhost:3100",
     },
   },
 });

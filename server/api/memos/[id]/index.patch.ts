@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
     | undefined;
   await deleteRemovedMemoImages(
     bucket,
+    db,
     ownerUid,
     previousMemo.body,
     memo.body,
