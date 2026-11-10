@@ -111,6 +111,17 @@ const queueAutoSave = (value: {
   saveTimer = setTimeout(() => saveMemo(value, version), 1000);
 };
 
+// タスマネでタスクを保存したとき、未保存の変更を保存してから紐付け対象として返す
+useEmbedSaveHandler(async () => {
+  if (!user.value) return "signed-out";
+  if (!memo.value) return "failed";
+  if (hasUnsavedChanges.value && currentDraft.value) {
+    await saveMemo(currentDraft.value);
+    if (hasUnsavedChanges.value) return "failed";
+  }
+  return { id: memoId.value, title: currentDraft.value?.title ?? memo.value.title };
+});
+
 const createAndSelectTag = async (
   name: string,
   selectTag: (tag: MemoTag) => void,

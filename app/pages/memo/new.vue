@@ -25,7 +25,7 @@ const createMemo = async (value: {
   tags: MemoTag[];
 }) => {
   if (!user.value || isSaving.value) {
-    return;
+    return null;
   }
 
   isSaving.value = true;
@@ -33,10 +33,20 @@ const createMemo = async (value: {
     const memo = await memoStore.createMemo(value);
     notifyMemoSaved({ id: memo.id, title: memo.title ?? value.title });
     await router.push(`/memo/${encodeURIComponent(memo.id)}?mode=edit`);
+    return memo;
   } finally {
     isSaving.value = false;
   }
 };
+
+// タスマネでタスクを保存したとき、書きかけのメモも保存する
+useEmbedSaveHandler(async () => {
+  if (!user.value) return "signed-out";
+  const draft = currentDraft.value;
+  if (!draft.title.trim() && !draft.body.trim()) return "empty";
+  const memo = await createMemo(draft);
+  return memo ? { id: memo.id, title: memo.title ?? draft.title } : "failed";
+});
 
 const trackDraft = (value: {
   title: string;

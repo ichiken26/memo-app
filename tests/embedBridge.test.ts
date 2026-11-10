@@ -35,6 +35,13 @@ test("accepts only well-formed auth messages from the resolved parent", () => {
   assert.equal(parseParentMessage(parent, "string", parent), null);
 });
 
+test("accepts a save request from the parent", () => {
+  const parent = "https://tasmane.kokage-studio.com";
+  assert.deepEqual(parseParentMessage(parent, { source: "tasmane", type: "save-request", requestId: "r1" }, parent), { type: "save-request", requestId: "r1" });
+  assert.equal(parseParentMessage(parent, { source: "tasmane", type: "save-request" }, parent), null);
+  assert.equal(parseParentMessage("https://evil.example", { source: "tasmane", type: "save-request", requestId: "r1" }, parent), null);
+});
+
 test("builds a frame-ancestors policy limited to the allowed origins", () => {
   assert.equal(
     frameAncestorsPolicy(["https://tasmane.kokage-studio.com", "http://localhost:3000"]),
