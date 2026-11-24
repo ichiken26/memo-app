@@ -53,12 +53,11 @@ const deleteMemo = (memo: MemoListItem) => {
             class="html"
             v-html="block.content"
           />
-          <img
+          <MemoImage
             v-else-if="block.type === 'image'"
             class="excerpt-image"
-            :src="block.url"
+            :url="block.url"
             :alt="block.alt"
-            loading="lazy"
           />
           <p v-else-if="block.type === 'link'" class="excerpt-media">
             🔗 {{ block.title || block.url }}

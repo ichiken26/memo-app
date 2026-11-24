@@ -5,6 +5,7 @@ import {
   cleanupOrphanedMemoImages,
   deleteRemovedMemoImages,
   extractOwnedMemoImageKeys,
+  isImageOwnedBy,
 } from "../server/utils/memoImages.ts";
 
 const ownerUid = "firebase-user-001";
@@ -142,5 +143,17 @@ describe("memo image cleanup", () => {
 
     assert.deepEqual(deletedKeys, [orphanKey]);
     assert.deepEqual(result, { scanned: 4, deleted: 1, truncated: false });
+  });
+});
+
+describe("isImageOwnedBy", () => {
+  test("accepts only the owner's well-formed image keys", () => {
+    assert.equal(isImageOwnedBy(firstKey, ownerUid), true);
+    assert.equal(isImageOwnedBy(firstKey, "other-user"), false);
+    assert.equal(isImageOwnedBy(firstKey, ""), false);
+    // uid の前方一致で他人のキーを通さない
+    assert.equal(isImageOwnedBy(firstKey, "firebase-user-00"), false);
+    assert.equal(isImageOwnedBy(`${ownerUid}/not-a-uuid.png`, ownerUid), false);
+    assert.equal(isImageOwnedBy(`${ownerUid}/../x/${firstKey}`, ownerUid), false);
   });
 });
