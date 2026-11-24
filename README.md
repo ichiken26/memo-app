@@ -77,7 +77,7 @@ npx wrangler --cwd .output deploy
 ![img]{代替テキスト}(/api/images/user-id/object-id.webp)
 ```
 
-右クリックメニュー、画像貼り付け、画像ドロップが利用できます。画像はPNG/JPEG/GIF/WebP、最大10MBです。
+右クリックメニュー、画像貼り付け、画像ドロップが利用できます。画像はPNG/JPEG/GIF/WebP、最大10MBです。画像の取得（`GET /api/images/...`）には Firebase ID トークンが必要で、アップロードしたユーザー本人にしか返しません（他人・未ログインには 401/404）。
 
 ### Keyboard shortcuts
 

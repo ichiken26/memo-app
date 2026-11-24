@@ -136,12 +136,11 @@ const onPreviewClick = (event: MouseEvent) => {
               class="html"
               v-html="block.content"
             />
-            <img
+            <MemoImage
               v-else-if="block.type === 'image'"
               class="memo-image"
-              :src="block.url"
+              :url="block.url"
               :alt="block.alt"
-              loading="lazy"
             />
             <ClientOnly v-else-if="block.type === 'mermaid'">
               <MermaidDiagram :source="block.content" />

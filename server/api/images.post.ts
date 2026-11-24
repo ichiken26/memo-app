@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
   await env.MEMO_IMAGES.put(key, image.data, {
     httpMetadata: {
       contentType: image.type,
-      cacheControl: "public, max-age=31536000, immutable",
+      cacheControl: "private, max-age=31536000, immutable",
     },
     customMetadata: { ownerUid: owner },
   });

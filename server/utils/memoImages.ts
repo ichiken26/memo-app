@@ -3,6 +3,16 @@ const IMAGE_ROUTE_PREFIX = "/api/images/";
 const R2_IMAGE_NAME_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:png|jpe?g|gif|webp)$/i;
 
+/** R2 キーが `{ownerUid}/{uuid}.{ext}` 形式で、指定ユーザーのものか */
+export const isImageOwnedBy = (key: string, ownerUid: string) => {
+  const ownerPrefix = `${ownerUid}/`;
+  return (
+    Boolean(ownerUid) &&
+    key.startsWith(ownerPrefix) &&
+    R2_IMAGE_NAME_RE.test(key.slice(ownerPrefix.length))
+  );
+};
+
 export const extractOwnedMemoImageKeys = (body: string, ownerUid: string) => {
   const keys = new Set<string>();
 
@@ -12,11 +22,7 @@ export const extractOwnedMemoImageKeys = (body: string, ownerUid: string) => {
       if (!pathname.startsWith(IMAGE_ROUTE_PREFIX)) continue;
 
       const key = decodeURIComponent(pathname.slice(IMAGE_ROUTE_PREFIX.length));
-      const ownerPrefix = `${ownerUid}/`;
-      if (!key.startsWith(ownerPrefix)) continue;
-
-      const imageName = key.slice(ownerPrefix.length);
-      if (R2_IMAGE_NAME_RE.test(imageName)) keys.add(key);
+      if (isImageOwnedBy(key, ownerUid)) keys.add(key);
     } catch {
       // Ignore malformed or unrelated URLs in memo text.
     }
